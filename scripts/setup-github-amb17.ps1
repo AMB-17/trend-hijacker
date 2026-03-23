@@ -104,8 +104,13 @@ if (-not $hasCommit) {
 $repoFull = "$GithubOwner/$RepoName"
 
 Write-Step "Creating or reusing GitHub repo $repoFull"
-& $ghPath repo view $repoFull --json name *> $null
-$repoExists = ($LASTEXITCODE -eq 0)
+$repoExists = $false
+try {
+  & $ghPath repo view $repoFull --json name *> $null
+  $repoExists = ($LASTEXITCODE -eq 0)
+} catch {
+  $repoExists = $false
+}
 
 if (-not $repoExists) {
   Invoke-Checked -File $ghPath -ArgList @("repo", "create", $repoFull, "--$Visibility", "--source", ".", "--remote", "origin", "--push") -ErrorMessage "Failed to create and push GitHub repository"
