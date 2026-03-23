@@ -66,7 +66,10 @@ class ApiClient {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const configuredBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+    this.baseUrl = configuredBaseUrl && configuredBaseUrl.length > 0
+      ? configuredBaseUrl.replace(/\/$/, '')
+      : '/api/proxy';
   }
 
   private async fetch<T>(

@@ -32,6 +32,15 @@ function Invoke-Checked {
   }
 }
 
+function New-SecureToken {
+  param([int]$Length = 48)
+
+  $bytes = New-Object byte[] $Length
+  $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+  $rng.GetBytes($bytes)
+  return [Convert]::ToBase64String($bytes)
+}
+
 $workspaceRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $workspaceRoot
 
@@ -126,11 +135,18 @@ if (-not $repoExists) {
 }
 
 if ([string]::IsNullOrWhiteSpace($CronApiUrl) -or $CronApiUrl -like "*your-deploy-url*") {
-  $CronApiUrl = Read-Host "Enter deployed app URL (example: https://trend-hijacker.vercel.app)"
+  if (-not [string]::IsNullOrWhiteSpace($env:DEPLOY_URL)) {
+    $CronApiUrl = $env:DEPLOY_URL.Trim()
+    Write-Step "Using DEPLOY_URL from environment for CRON_API_URL"
+  } else {
+    $CronApiUrl = "https://$RepoName.vercel.app"
+    Write-Step "CRON_API_URL not provided; defaulting to '$CronApiUrl'"
+  }
 }
 
 if ([string]::IsNullOrWhiteSpace($CronSecret) -or $CronSecret -like "*your-long-secret*") {
-  $CronSecret = Read-Host "Enter CRON_SECRET"
+  $CronSecret = New-SecureToken
+  Write-Step "CRON_SECRET not provided; generated a secure secret automatically"
 }
 
 if (-not [string]::IsNullOrWhiteSpace($CronApiUrl)) {

@@ -8,13 +8,19 @@ This project now includes a one-run setup script.
 - GitHub CLI installed at `C:\Program Files\GitHub CLI\gh.exe`
 - You can authenticate to GitHub in browser
 
-## One Command
+## One Command (No Editing)
 
 Run from workspace root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-github-amb17.ps1 -RepoName trend-hijacker -Visibility public -GithubOwner AMB-17 -CronApiUrl "https://your-deploy-url" -CronSecret "your-long-secret"
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-github-amb17.ps1
 ```
+
+Defaults used automatically:
+- Repo: `AMB-17/trend-hijacker`
+- Visibility: `public`
+- `CRON_SECRET`: generated securely if missing
+- `CRON_API_URL`: uses `DEPLOY_URL` env if set, otherwise defaults to `https://trend-hijacker.vercel.app`
 
 ## What the script does
 
