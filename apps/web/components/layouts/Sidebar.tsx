@@ -18,7 +18,7 @@ export function Sidebar() {
     <aside className="hidden lg:fixed lg:left-0 lg:top-16 lg:bottom-0 lg:w-64 lg:border-r lg:border-border lg:bg-card/50 lg:overflow-y-auto">
       <nav className="p-4 space-y-2">
         {sidebarLinks.map(({ href, label, icon }) => {
-          const isActive = pathname.startsWith(href);
+          const isActive = (pathname ?? '').startsWith(href);
 
           return (
             <Link

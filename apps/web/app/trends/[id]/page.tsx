@@ -57,12 +57,12 @@ export default function TrendDetailPage() {
   }
 
   const chartData = [
-    { name: 'Week 1', value: 10 },
-    { name: 'Week 2', value: 15 },
-    { name: 'Week 3', value: 25 },
-    { name: 'Week 4', value: 40 },
-    { name: 'Week 5', value: 65 },
-    { name: 'Week 6', value: 95 },
+    { timestamp: 'Week 1', value: 10 },
+    { timestamp: 'Week 2', value: 15 },
+    { timestamp: 'Week 3', value: 25 },
+    { timestamp: 'Week 4', value: 40 },
+    { timestamp: 'Week 5', value: 65 },
+    { timestamp: 'Week 6', value: 95 },
   ];
 
   return (
@@ -116,7 +116,7 @@ export default function TrendDetailPage() {
               <span className="text-3xl font-bold text-success">
                 {(trend.velocityGrowth * 100).toFixed(0)}%
               </span>
-              <VelocityIndicator growth={trend.velocityGrowth} />
+              <VelocityIndicator percentage={trend.velocityGrowth * 100} />
             </div>
             <p className="text-sm text-muted">Rate of topic acceleration</p>
           </CardBody>
@@ -180,7 +180,7 @@ export default function TrendDetailPage() {
           <CardBody>
             <div className="flex flex-wrap gap-2">
               {trend.keywords.map((keyword) => (
-                <Badge key={keyword} variant="secondary">
+                <Badge key={keyword} variant="default">
                   {keyword}
                 </Badge>
               ))}
@@ -200,10 +200,7 @@ export default function TrendDetailPage() {
             {Array.isArray(trend.suggestedIdeas) ? (
               trend.suggestedIdeas.slice(0, 3).map((idea, index) => (
                 <div key={index} className="p-4 bg-card/50 rounded-lg border border-border/50">
-                  <h4 className="font-semibold text-foreground mb-1">{idea.title || idea}</h4>
-                  {typeof idea === 'object' && idea.description && (
-                    <p className="text-sm text-muted">{idea.description}</p>
-                  )}
+                  <h4 className="font-semibold text-foreground mb-1">{idea}</h4>
                 </div>
               ))
             ) : (

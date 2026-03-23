@@ -197,13 +197,13 @@ export default function OpportunitiesPage() {
                   <div className="flex justify-between">
                     <span className="text-muted">Hot Opportunities</span>
                     <span className="font-semibold text-success">
-                      {opportunityMap.summary.hotCount || 0}
+                      {opportunityMap.quadrants.quickWins.length + opportunityMap.quadrants.bigBets.length}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted">Avg. Competition</span>
+                    <span className="text-muted">Avg. Opportunity</span>
                     <span className="font-semibold text-foreground">
-                      {(opportunityMap.summary.avgCompetition || 0).toFixed(1)}
+                      {(opportunityMap.summary.avgOpportunityScore || 0).toFixed(1)}
                     </span>
                   </div>
                 </CardBody>
@@ -250,7 +250,7 @@ export default function OpportunitiesPage() {
                 <p className="text-sm text-muted mb-2">Keywords</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedTrend.keywords.slice(0, 5).map((kw: string) => (
-                    <Badge key={kw} variant="secondary">
+                    <Badge key={kw} variant="default">
                       {kw}
                     </Badge>
                   ))}
@@ -266,7 +266,7 @@ export default function OpportunitiesPage() {
       )}
 
       {/* Empty State */}
-      {!loading && !error && (!opportunityMap || opportunityMap.quadrants?.allTrends?.length === 0) && (
+      {!loading && !error && (!opportunityMap || opportunityMap.summary.total === 0) && (
         <Card>
           <CardBody className="text-center py-12">
             <p className="text-muted text-lg mb-4">No opportunity data available yet</p>
