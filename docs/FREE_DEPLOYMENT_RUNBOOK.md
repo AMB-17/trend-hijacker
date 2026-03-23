@@ -41,6 +41,7 @@ If you use Prisma in your deployment pipeline, run your existing migration comma
 In GitHub repository settings -> Secrets and variables -> Actions, add:
 
 - `CRON_API_URL` = deployed API base URL, for example `https://your-app.vercel.app`
+- `CRON_API_URL` = deployed backend API base URL, for example `https://api.your-domain.com`
 - `CRON_SECRET` = same value as Vercel `CRON_SECRET`
 
 ## 5) Enable Scheduled Job
@@ -56,7 +57,7 @@ It runs every 6 hours and calls:
 One-command local/CI sanity check:
 
 ```bash
-DEPLOY_URL=https://your-app.vercel.app CRON_SECRET=your-secret pnpm deploy:sanity
+DEPLOY_URL=https://api.your-domain.com CRON_SECRET=your-secret pnpm deploy:sanity
 ```
 
 GitHub workflow file:
@@ -71,7 +72,7 @@ Required GitHub secrets:
 Run this command against production:
 
 ```bash
-curl -X POST "https://your-app.vercel.app/api/internal/cron/run-all" \
+curl -X POST "https://api.your-domain.com/api/internal/cron/run-all" \
   -H "Content-Type: application/json" \
   -H "x-cron-secret: your-secret" \
   -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":20,"hoursBack":24,"maxTrends":12,"minMentions":4}'

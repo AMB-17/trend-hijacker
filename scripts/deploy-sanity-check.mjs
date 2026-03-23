@@ -51,7 +51,11 @@ async function assertJsonResponse(name, response) {
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(`${name} failed with ${response.status}: ${text}`);
+    const looksLikeNextHtml = text.includes("_next/static") || text.includes("This page could not be found");
+    const configHint = looksLikeNextHtml
+      ? " Hint: DEPLOY_URL/CRON_API_URL is likely pointing to the frontend URL, not the backend API base URL."
+      : "";
+    throw new Error(`${name} failed with ${response.status}: ${text}${configHint}`);
   }
 
   try {

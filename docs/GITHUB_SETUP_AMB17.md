@@ -20,7 +20,10 @@ Defaults used automatically:
 - Repo: `AMB-17/trend-hijacker`
 - Visibility: `public`
 - `CRON_SECRET`: generated securely if missing
-- `CRON_API_URL`: uses `DEPLOY_URL` env if set, otherwise defaults to `https://trend-hijacker.vercel.app`
+- `CRON_API_URL`: uses `DEPLOY_URL` env if set; otherwise the script skips it until you provide the real backend API URL
+
+Important:
+- `CRON_API_URL` must be your backend API base URL (the service that exposes `/health` and `/api/internal/cron/run-all`), not the frontend web URL.
 
 ## What the script does
 

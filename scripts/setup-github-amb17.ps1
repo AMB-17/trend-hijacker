@@ -139,12 +139,14 @@ if ([string]::IsNullOrWhiteSpace($CronApiUrl) -or $CronApiUrl -like "*your-deplo
     $CronApiUrl = $env:DEPLOY_URL.Trim()
     Write-Step "Using DEPLOY_URL from environment for CRON_API_URL"
   } else {
-    $CronApiUrl = "https://$RepoName.vercel.app"
-    Write-Step "CRON_API_URL not provided; defaulting to '$CronApiUrl'"
+    $CronApiUrl = ""
+    Write-Step "CRON_API_URL not provided; skipping secret set until real backend API URL is known"
   }
 }
 
-$CronApiUrl = $CronApiUrl.Trim().TrimEnd('/')
+if (-not [string]::IsNullOrWhiteSpace($CronApiUrl)) {
+  $CronApiUrl = $CronApiUrl.Trim().TrimEnd('/')
+}
 
 if ([string]::IsNullOrWhiteSpace($CronSecret) -or $CronSecret -like "*your-long-secret*") {
   $CronSecret = New-SecureToken
@@ -154,6 +156,8 @@ if ([string]::IsNullOrWhiteSpace($CronSecret) -or $CronSecret -like "*your-long-
 if (-not [string]::IsNullOrWhiteSpace($CronApiUrl)) {
   Write-Step "Setting GitHub Actions secret CRON_API_URL"
   Invoke-Checked -File $ghPath -ArgList @("secret", "set", "CRON_API_URL", "--repo", $repoFull, "--body", $CronApiUrl) -ErrorMessage "Failed to set CRON_API_URL secret"
+} else {
+  Write-Host "[setup] Skipped CRON_API_URL. Set it later with your deployed backend API URL." -ForegroundColor Yellow
 }
 
 if (-not [string]::IsNullOrWhiteSpace($CronSecret)) {
