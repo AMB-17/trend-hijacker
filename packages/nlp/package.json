@@ -1,0 +1,23 @@
+{
+  "name": "@packages/nlp",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "natural": "^8.0.1",
+    "compromise": "^14.14.3",
+    "stopword": "^3.1.5"
+  },
+  "devDependencies": {
+    "@packages/eslint-config": "workspace:*",
+    "@packages/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "@types/natural": "^5.1.5",
+    "typescript": "^5.7.2"
+  }
+}

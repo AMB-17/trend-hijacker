@@ -1,0 +1,24 @@
+name: Deploy Sanity
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  sanity-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run post-deploy sanity check
+        env:
+          DEPLOY_URL: ${{ secrets.CRON_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: node scripts/deploy-sanity-check.mjs

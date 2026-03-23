@@ -1,0 +1,24 @@
+{
+  "name": "@workers/trend-engine",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@packages/nlp": "workspace:*",
+    "@packages/scoring": "workspace:*",
+    "@workers/scraper": "workspace:*",
+    "bullmq": "^5.3.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
+  }
+}

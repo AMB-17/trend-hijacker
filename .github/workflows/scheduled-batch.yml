@@ -1,0 +1,33 @@
+name: Scheduled Batch Ingestion
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  run-batch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger API batch pipeline
+        env:
+          CRON_API_URL: ${{ secrets.CRON_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_API_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Missing CRON_API_URL or CRON_SECRET secrets"
+            exit 1
+          fi
+
+          echo "Calling scheduled batch endpoint..."
+          response=$(curl -sS -X POST "$CRON_API_URL/api/internal/cron/run-all" \
+            -H "Content-Type: application/json" \
+            -H "x-cron-secret: $CRON_SECRET" \
+            -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}')
+
+          echo "$response"
+
+          echo "$response" | grep -q '"success":true' || {
+            echo "Batch trigger failed"
+            exit 1
+          }

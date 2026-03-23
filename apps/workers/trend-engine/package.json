@@ -1,0 +1,26 @@
+{
+  "name": "@apps/trend-engine-worker",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@packages/database": "workspace:*",
+    "@packages/nlp": "workspace:*",
+    "@packages/scoring": "workspace:*",
+    "@packages/types": "workspace:*",
+    "@packages/utils": "workspace:*",
+    "bullmq": "^5.36.3",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "@packages/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

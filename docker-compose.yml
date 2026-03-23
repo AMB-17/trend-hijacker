@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: trend_hijacker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache & Queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/trend_hijacker
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/src:/app/src
+
+  # Scraper Worker
+  scraper-worker:
+    build:
+      context: .
+      dockerfile: workers/scraper/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/trend_hijacker
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./workers/scraper/src:/app/src
+
+  # Trend Engine Worker
+  trend-engine:
+    build:
+      context: .
+      dockerfile: workers/trend-engine/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/trend_hijacker
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./workers/trend-engine/src:/app/src
+
+  # Frontend
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://api:3000
+      NODE_ENV: development
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web/app:/app/app
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: trend-hijacker-network

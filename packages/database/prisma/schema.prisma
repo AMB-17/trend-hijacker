@@ -1,0 +1,212 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  name         String?
+  tier         Tier     @default(FREE)
+  stripeId     String?  @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  savedTrends SavedTrend[]
+  reports     Report[]
+
+  @@index([email])
+}
+
+enum Tier {
+  FREE
+  PREMIUM
+}
+
+model Source {
+  id           String    @id @default(cuid())
+  name         String    @unique // "reddit", "hackernews", etc.
+  type         String // "forum", "social", "community"
+  baseUrl      String
+  enabled      Boolean   @default(true)
+  lastScraped  DateTime?
+  scrapedCount Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  posts Post[]
+
+  @@index([name])
+}
+
+model Post {
+  id         String   @id @default(cuid())
+  sourceId   String
+  source     Source   @relation(fields: [sourceId], references: [id])
+  externalId String // Original post ID from source
+  title      String
+  content    String   @db.Text
+  url        String
+  author     String?
+
+  publishedAt DateTime
+  scrapedAt   DateTime @default(now())
+
+  upvotes    Int   @default(0)
+  comments   Int   @default(0)
+  engagement Float @default(0) // Calculated metric
+
+  processedAt DateTime?
+  processed   Boolean   @default(false)
+
+  trends          TrendPost[]
+  extractedTopics Topic[]
+  painPoints      PainPoint[]
+
+  @@unique([sourceId, externalId])
+  @@index([sourceId, publishedAt])
+  @@index([processed])
+  @@index([publishedAt])
+}
+
+model Topic {
+  id        String   @id @default(cuid())
+  keyword   String   @unique
+  category  String?
+  firstSeen DateTime @default(now())
+
+  posts  Post[]
+  trends Trend[]
+
+  @@index([keyword])
+}
+
+model PainPoint {
+  id         String   @id @default(cuid())
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id])
+  text       String   @db.Text
+  pattern    String // "wish", "need", "problem", etc.
+  intensity  Float // 0-1 score
+  detectedAt DateTime @default(now())
+
+  @@index([postId])
+  @@index([pattern])
+}
+
+model Trend {
+  id    String @id @default(cuid())
+  title String
+  summary String @db.Text
+
+  // Scoring components
+  opportunityScore Float // 0-100
+  velocityGrowth   Float // Growth rate
+  problemIntensity Float // How urgent the problem is
+  discussionVolume Int // Number of mentions
+  noveltyScore     Float // How new is this
+
+  // Status
+  status TrendStatus @default(EMERGING)
+  stage  String      @default("emerging") // "early_signal", "emerging", "exploding", "mature"
+
+  // Time tracking
+  firstDetected DateTime  @default(now())
+  lastUpdated   DateTime  @updatedAt
+  peakDate      DateTime?
+
+  // Metadata
+  growthRate Float  @default(0)
+  momentum   String @default("stable") // "accelerating", "stable", "declining"
+
+  // Business insights
+  suggestedIdeas  Json?
+  targetAudience  String?
+  marketPotential String? // "low", "medium", "high"
+  keywords        String[] @default([]) // Array of keywords
+
+  // Relationships
+  posts   TrendPost[]
+  topics  Topic[]
+  savedBy SavedTrend[]
+  reports ReportTrend[]
+
+  @@index([status])
+  @@index([opportunityScore])
+  @@index([firstDetected])
+  @@index([stage])
+}
+
+enum TrendStatus {
+  EMERGING
+  ACTIVE
+  EXPLODING
+  DECLINING
+  ARCHIVED
+}
+
+model TrendPost {
+  trendId   String
+  trend     Trend  @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  postId    String
+  post      Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  relevance Float  @default(1.0)
+
+  @@id([trendId, postId])
+}
+
+model SavedTrend {
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trendId String
+  trend   Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  savedAt DateTime @default(now())
+
+  @@id([userId, trendId])
+}
+
+model Report {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  title       String
+  type        String // "daily", "weekly", "custom"
+  generatedAt DateTime @default(now())
+  startDate   DateTime
+  endDate     DateTime
+  summary     String   @db.Text
+  insights    Json?
+
+  trends ReportTrend[]
+
+  @@index([type, generatedAt])
+}
+
+model ReportTrend {
+  reportId String
+  report   Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  trendId  String
+  trend    Trend  @relation(fields: [trendId], references: [id], onDelete: Cascade)
+
+  @@id([reportId, trendId])
+}
+
+model VelocitySnapshot {
+  id        String   @id @default(cuid())
+  topicId   String?
+  keyword   String
+  count     Int
+  timestamp DateTime @default(now())
+  source    String?
+
+  @@index([keyword, timestamp])
+  @@index([timestamp])
+}

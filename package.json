@@ -1,0 +1,36 @@
+{
+  "name": "trend-hijacker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A platform that detects early internet demand signals before they become mainstream trends",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "pnpm --filter @packages/database db:generate",
+    "db:migrate": "pnpm --filter @packages/database db:migrate",
+    "db:push": "pnpm --filter @packages/database db:push",
+    "db:studio": "pnpm --filter @packages/database db:studio",
+    "deploy:sanity": "node scripts/deploy-sanity-check.mjs",
+    "github:setup": "powershell -ExecutionPolicy Bypass -File ./scripts/setup-github-amb17.ps1",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.3.3",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  },
+  "packageManager": "pnpm@9.15.1",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@packages/scoring",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@packages/types": "workspace:*",
+    "@packages/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@packages/eslint-config": "workspace:*",
+    "@packages/typescript-config": "workspace:*",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  }
+}

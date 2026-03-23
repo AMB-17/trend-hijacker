@@ -1,0 +1,93 @@
+import { z } from 'zod';
+
+// Validation schemas
+
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  email: z.string().email(),
+  tier: z.enum(['free', 'premium', 'enterprise']),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const TrendSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().min(1).max(500),
+  summary: z.string().min(10).max(5000),
+  opportunityScore: z.number().min(0).max(100),
+  velocityScore: z.number().min(0).max(1),
+  problemIntensity: z.number().min(0).max(1),
+  noveltyScore: z.number().min(0).max(1),
+  discussionCount: z.number().int().nonnegative(),
+  sourceCount: z.number().int().nonnegative(),
+  status: z.enum(['emerging', 'growing', 'peak', 'declining', 'stable']),
+  category: z.string().optional(),
+  suggestedIdeas: z.array(z.string()),
+  marketPotentialEstimate: z.string().optional(),
+  peakDate: z.date().optional(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+
+export const DiscussionSchema = z.object({
+  id: z.string().uuid(),
+  source: z.enum(['reddit', 'hackernews', 'producthunt', 'indiehackers', 'rss']),
+  sourceId: z.string(),
+  url: z.string().url(),
+  title: z.string().optional(),
+  content: z.string().min(1),
+  author: z.string().optional(),
+  upvotes: z.number().int().nonnegative().default(0),
+  commentsCount: z.number().int().nonnegative().default(0),
+  sentimentScore: z.number().min(-1).max(1).optional(),
+  extractedKeywords: z.array(z.string()).default([]),
+  painPointsDetected: z.boolean().default(false),
+  createdAt: z.date(),
+  fetchedAt: z.date(),
+});
+
+export const PainPointSchema = z.object({
+  id: z.string().uuid(),
+  trendId: z.string().uuid(),
+  patternPhrase: z.string().min(1).max(500),
+  matchCount: z.number().int().positive(),
+  intensity: z.number().min(0).max(1),
+  lastSeen: z.date(),
+  createdAt: z.date(),
+});
+
+export const OpportunityIdeaSchema = z.object({
+  type: z.enum(['startup', 'saas', 'content', 'product']),
+  title: z.string().min(1).max(200),
+  description: z.string().min(10).max(2000),
+  targetAudience: z.string().min(1).max(500),
+  difficulty: z.enum(['low', 'medium', 'high']),
+  potentialMarketSize: z.string().optional(),
+});
+
+export const CreateTrendInputSchema = z.object({
+  title: z.string().min(1).max(500),
+  summary: z.string().min(10).max(5000),
+  opportunityScore: z.number().min(0).max(100),
+  velocityScore: z.number().min(0).max(1),
+  problemIntensity: z.number().min(0).max(1),
+  noveltyScore: z.number().min(0).max(1),
+  discussionCount: z.number().int().nonnegative(),
+  sourceCount: z.number().int().nonnegative(),
+  status: z.enum(['emerging', 'growing', 'peak', 'declining', 'stable']).default('emerging'),
+  category: z.string().optional(),
+  suggestedIdeas: z.array(z.string()).default([]),
+});
+
+export const CursorPaginationSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.number().int().positive().max(100).default(20),
+});
+
+export type User = z.infer<typeof UserSchema>;
+export type Trend = z.infer<typeof TrendSchema>;
+export type Discussion = z.infer<typeof DiscussionSchema>;
+export type PainPoint = z.infer<typeof PainPointSchema>;
+export type OpportunityIdea = z.infer<typeof OpportunityIdeaSchema>;
+export type CreateTrendInput = z.infer<typeof CreateTrendInputSchema>;
+export type CursorPagination = z.infer<typeof CursorPaginationSchema>;
