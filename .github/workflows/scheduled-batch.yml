@@ -13,14 +13,20 @@ jobs:
         env:
           CRON_API_URL: ${{ secrets.CRON_API_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
         run: |
           if [ -z "$CRON_API_URL" ] || [ -z "$CRON_SECRET" ]; then
             echo "Missing CRON_API_URL or CRON_SECRET secrets"
             exit 1
           fi
 
+          target_url="$CRON_API_URL/api/internal/cron/run-all"
+          if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
+            target_url="$target_url?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
+          fi
+
           echo "Calling scheduled batch endpoint..."
-          response=$(curl -sSL -X POST "$CRON_API_URL/api/internal/cron/run-all" \
+          response=$(curl -sSL -X POST "$target_url" \
             -H "Content-Type: application/json" \
             -H "x-cron-secret: $CRON_SECRET" \
             -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}')

@@ -2,6 +2,7 @@
 
 const deployUrl = process.env.DEPLOY_URL;
 const cronSecret = process.env.CRON_SECRET;
+const vercelBypassToken = process.env.VERCEL_BYPASS_TOKEN;
 
 if (!deployUrl) {
   console.error("Missing DEPLOY_URL. Example: https://your-app.example.com");
@@ -15,6 +16,15 @@ if (!cronSecret) {
 
 function normalizeBaseUrl(url) {
   return url.endsWith("/") ? url.slice(0, -1) : url;
+}
+
+function withBypass(url) {
+  if (!vercelBypassToken) {
+    return url;
+  }
+
+  const joiner = url.includes("?") ? "&" : "?";
+  return `${url}${joiner}x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${encodeURIComponent(vercelBypassToken)}`;
 }
 
 async function assertJsonResponse(name, response) {
@@ -34,8 +44,9 @@ async function assertJsonResponse(name, response) {
 async function main() {
   const baseUrl = normalizeBaseUrl(deployUrl);
 
-  console.log(`Checking health endpoint: ${baseUrl}/health`);
-  const healthResponse = await fetch(`${baseUrl}/health`);
+  const healthUrl = withBypass(`${baseUrl}/health`);
+  console.log(`Checking health endpoint: ${healthUrl}`);
+  const healthResponse = await fetch(healthUrl);
   const healthJson = await assertJsonResponse("Health check", healthResponse);
 
   if (healthJson.status !== "ok") {
@@ -44,8 +55,9 @@ async function main() {
 
   console.log("Health endpoint passed.");
 
-  console.log(`Triggering batch run: ${baseUrl}/api/internal/cron/run-all`);
-  const batchResponse = await fetch(`${baseUrl}/api/internal/cron/run-all`, {
+  const batchUrl = withBypass(`${baseUrl}/api/internal/cron/run-all`);
+  console.log(`Triggering batch run: ${batchUrl}`);
+  const batchResponse = await fetch(batchUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",

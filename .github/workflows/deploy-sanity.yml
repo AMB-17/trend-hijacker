@@ -21,4 +21,5 @@ jobs:
         env:
           DEPLOY_URL: ${{ secrets.CRON_API_URL }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          VERCEL_BYPASS_TOKEN: ${{ secrets.VERCEL_BYPASS_TOKEN }}
         run: node scripts/deploy-sanity-check.mjs
