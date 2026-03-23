@@ -7,9 +7,24 @@ import { MetricCard } from '@/components/ui/MetricCard';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { data: earlySignals, loading: earlyLoading, error: earlyError } = useEarlySignals(6);
-  const { data: explodingTrends, loading: explodingLoading, error: explodingError } = useExplodingTrends(6);
-  const { data: opportunityMap, loading: oppLoading, error: oppError } = useOpportunityMap();
+  const {
+    data: earlySignals,
+    loading: earlyLoading,
+    error: earlyError,
+    retry: retryEarlySignals,
+  } = useEarlySignals(6);
+  const {
+    data: explodingTrends,
+    loading: explodingLoading,
+    error: explodingError,
+    retry: retryExplodingTrends,
+  } = useExplodingTrends(6);
+  const {
+    data: opportunityMap,
+    loading: oppLoading,
+    error: oppError,
+    retry: retryOpportunityMap,
+  } = useOpportunityMap();
 
   const totalMetrics = {
     earlySignals: earlySignals?.length || 0,
@@ -68,7 +83,7 @@ export default function DashboardPage() {
           <Card>
             <CardBody className="text-center py-8">
               <p className="text-danger mb-4">{earlyError}</p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={retryEarlySignals}>
                 Retry
               </Button>
             </CardBody>
@@ -105,7 +120,7 @@ export default function DashboardPage() {
           <Card>
             <CardBody className="text-center py-8">
               <p className="text-danger mb-4">{explodingError}</p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={retryExplodingTrends}>
                 Retry
               </Button>
             </CardBody>
@@ -142,7 +157,7 @@ export default function DashboardPage() {
           <Card>
             <CardBody className="text-center py-8">
               <p className="text-danger mb-4">{oppError}</p>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={retryOpportunityMap}>
                 Retry
               </Button>
             </CardBody>
