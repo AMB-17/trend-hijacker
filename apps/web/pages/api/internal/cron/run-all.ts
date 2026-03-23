@@ -71,6 +71,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+    const isDatabaseUnavailable = /ECONNREFUSED|DATABASE_URL|ENOTFOUND|ETIMEDOUT|ECONNRESET/i.test(message)
+
+    if (isDatabaseUnavailable) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          ingestion: {
+            totalImported: 0,
+            sourceBreakdown: {
+              reddit: 0,
+              hackernews: 0,
+              producthunt: 0,
+              indiehackers: 0,
+              rss: 0,
+            },
+            discussionSourceIds: [],
+            skipped: true,
+            reason: message,
+          },
+          processing: {
+            scannedDiscussions: 0,
+            createdTrends: 0,
+            processedAt: new Date().toISOString(),
+            skipped: true,
+            reason: message,
+          },
+        },
+      })
+    }
+
     return res.status(500).json({ success: false, error: { message } })
   }
 }
