@@ -26,14 +26,34 @@ jobs:
           fi
 
           echo "Calling scheduled batch endpoint..."
-          response=$(curl -sSL -X POST "$target_url" \
-            -H "Content-Type: application/json" \
-            -H "x-cron-secret: $CRON_SECRET" \
-            -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}')
+          curl_args=(
+            -sS
+            -X POST
+            "$target_url"
+            -H "Content-Type: application/json"
+            -H "x-cron-secret: $CRON_SECRET"
+            -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}'
+          )
 
-          echo "$response"
+          if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
+            curl_args+=(
+              -H "x-vercel-protection-bypass: $VERCEL_BYPASS_TOKEN"
+              -H "Cookie: x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
+            )
+          fi
 
-          echo "$response" | grep -q '"success":true' || {
+          response=$(curl "${curl_args[@]}" -w '\nHTTP_STATUS:%{http_code}')
+          status=$(echo "$response" | sed -n 's/^HTTP_STATUS://p')
+          body=$(echo "$response" | sed '/^HTTP_STATUS:/d')
+
+          echo "$body"
+
+          if [ -z "$status" ] || [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Batch trigger failed with HTTP $status"
+            exit 1
+          fi
+
+          echo "$body" | grep -q '"success":true' || {
             echo "Batch trigger failed"
             exit 1
           }

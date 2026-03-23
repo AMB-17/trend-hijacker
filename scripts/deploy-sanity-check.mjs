@@ -27,6 +27,26 @@ function withBypass(url) {
   return `${url}${joiner}x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${encodeURIComponent(vercelBypassToken)}`;
 }
 
+function buildBypassHeaders(extraHeaders = {}) {
+  if (!vercelBypassToken) {
+    return extraHeaders;
+  }
+
+  return {
+    ...extraHeaders,
+    "x-vercel-protection-bypass": vercelBypassToken,
+    cookie: `x-vercel-protection-bypass=${vercelBypassToken}`,
+  };
+}
+
+async function fetchWithBypass(url, init = {}) {
+  const headers = buildBypassHeaders(init.headers ?? {});
+  return fetch(withBypass(url), {
+    ...init,
+    headers,
+  });
+}
+
 async function assertJsonResponse(name, response) {
   const text = await response.text();
 
@@ -44,9 +64,9 @@ async function assertJsonResponse(name, response) {
 async function main() {
   const baseUrl = normalizeBaseUrl(deployUrl);
 
-  const healthUrl = withBypass(`${baseUrl}/health`);
-  console.log(`Checking health endpoint: ${healthUrl}`);
-  const healthResponse = await fetch(healthUrl);
+  const healthUrl = `${baseUrl}/health`;
+  console.log(`Checking health endpoint: ${withBypass(healthUrl)}`);
+  const healthResponse = await fetchWithBypass(healthUrl);
   const healthJson = await assertJsonResponse("Health check", healthResponse);
 
   if (healthJson.status !== "ok") {
@@ -55,9 +75,9 @@ async function main() {
 
   console.log("Health endpoint passed.");
 
-  const batchUrl = withBypass(`${baseUrl}/api/internal/cron/run-all`);
-  console.log(`Triggering batch run: ${batchUrl}`);
-  const batchResponse = await fetch(batchUrl, {
+  const batchUrl = `${baseUrl}/api/internal/cron/run-all`;
+  console.log(`Triggering batch run: ${withBypass(batchUrl)}`);
+  const batchResponse = await fetchWithBypass(batchUrl, {
     method: "POST",
     headers: {
       "content-type": "application/json",
