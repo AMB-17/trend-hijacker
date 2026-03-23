@@ -67,11 +67,25 @@ async function assertJsonResponse(name, response) {
 
 async function main() {
   const baseUrl = normalizeBaseUrl(deployUrl);
+  let apiBaseUrl = baseUrl;
 
+  let healthJson;
   const healthUrl = `${baseUrl}/health`;
-  console.log(`Checking health endpoint: ${withBypass(healthUrl)}`);
-  const healthResponse = await fetchWithBypass(healthUrl);
-  const healthJson = await assertJsonResponse("Health check", healthResponse);
+
+  try {
+    console.log(`Checking health endpoint: ${withBypass(healthUrl)}`);
+    const healthResponse = await fetchWithBypass(healthUrl);
+    healthJson = await assertJsonResponse("Health check", healthResponse);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Direct health check failed. Retrying through proxy route. Reason: ${message}`);
+
+    const proxyHealthUrl = `${baseUrl}/api/proxy/health`;
+    console.log(`Checking proxied health endpoint: ${withBypass(proxyHealthUrl)}`);
+    const proxyHealthResponse = await fetchWithBypass(proxyHealthUrl);
+    healthJson = await assertJsonResponse("Health check via proxy", proxyHealthResponse);
+    apiBaseUrl = `${baseUrl}/api/proxy`;
+  }
 
   if (healthJson.status !== "ok") {
     throw new Error(`Unexpected health payload: ${JSON.stringify(healthJson)}`);
@@ -79,7 +93,7 @@ async function main() {
 
   console.log("Health endpoint passed.");
 
-  const batchUrl = `${baseUrl}/api/internal/cron/run-all`;
+  const batchUrl = `${apiBaseUrl}/api/internal/cron/run-all`;
   console.log(`Triggering batch run: ${withBypass(batchUrl)}`);
   const batchResponse = await fetchWithBypass(batchUrl, {
     method: "POST",

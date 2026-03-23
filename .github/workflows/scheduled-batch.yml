@@ -20,40 +20,61 @@ jobs:
             exit 1
           fi
 
-          target_url="$CRON_API_URL/api/internal/cron/run-all"
-          if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
-            target_url="$target_url?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
-          fi
+          call_batch_endpoint() {
+            local endpoint_url="$1"
 
-          echo "Calling scheduled batch endpoint..."
-          curl_args=(
-            -sS
-            -X POST
-            "$target_url"
-            -H "Content-Type: application/json"
-            -H "x-cron-secret: $CRON_SECRET"
-            -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}'
-          )
+            if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
+              endpoint_url="$endpoint_url?x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
+            fi
 
-          if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
-            curl_args+=(
-              -H "x-vercel-protection-bypass: $VERCEL_BYPASS_TOKEN"
-              -H "Cookie: x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
+            curl_args=(
+              -sS
+              -L
+              -X POST
+              "$endpoint_url"
+              -H "Content-Type: application/json"
+              -H "x-cron-secret: $CRON_SECRET"
+              -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}'
             )
-          fi
 
-          response=$(curl "${curl_args[@]}" -w '\nHTTP_STATUS:%{http_code}')
-          status=$(echo "$response" | sed -n 's/^HTTP_STATUS://p')
-          body=$(echo "$response" | sed '/^HTTP_STATUS:/d')
+            if [ -n "$VERCEL_BYPASS_TOKEN" ]; then
+              curl_args+=(
+                -H "x-vercel-protection-bypass: $VERCEL_BYPASS_TOKEN"
+                -H "Cookie: x-vercel-protection-bypass=$VERCEL_BYPASS_TOKEN"
+              )
+            fi
 
-          echo "$body"
+            response=$(curl "${curl_args[@]}" -w '\nHTTP_STATUS:%{http_code}')
+            status=$(echo "$response" | sed -n 's/^HTTP_STATUS://p')
+            body=$(echo "$response" | sed '/^HTTP_STATUS:/d')
 
-          if [ -z "$status" ] || [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
-            echo "Batch trigger failed with HTTP $status"
-            exit 1
-          fi
+            echo "$body"
 
-          echo "$body" | grep -q '"success":true' || {
-            echo "Batch trigger failed"
-            exit 1
+            if [ -z "$status" ] || [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+              echo "Endpoint call failed with HTTP $status"
+              return 1
+            fi
+
+            echo "$body" | grep -q '"success":true' || {
+              echo "Endpoint call did not return success=true"
+              return 1
+            }
+
+            return 0
           }
+
+          direct_url="$CRON_API_URL/api/internal/cron/run-all"
+          proxy_url="$CRON_API_URL/api/proxy/api/internal/cron/run-all"
+
+          echo "Calling scheduled batch endpoint (direct API URL)..."
+          if call_batch_endpoint "$direct_url"; then
+            exit 0
+          fi
+
+          echo "Direct call failed. Retrying through frontend proxy URL..."
+          if call_batch_endpoint "$proxy_url"; then
+            exit 0
+          fi
+
+          echo "Batch trigger failed for both direct and proxy endpoint paths"
+          exit 1
