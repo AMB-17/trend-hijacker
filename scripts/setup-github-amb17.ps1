@@ -144,6 +144,8 @@ if ([string]::IsNullOrWhiteSpace($CronApiUrl) -or $CronApiUrl -like "*your-deplo
   }
 }
 
+$CronApiUrl = $CronApiUrl.Trim().TrimEnd('/')
+
 if ([string]::IsNullOrWhiteSpace($CronSecret) -or $CronSecret -like "*your-long-secret*") {
   $CronSecret = New-SecureToken
   Write-Step "CRON_SECRET not provided; generated a secure secret automatically"

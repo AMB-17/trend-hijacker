@@ -20,7 +20,7 @@ jobs:
           fi
 
           echo "Calling scheduled batch endpoint..."
-          response=$(curl -sS -X POST "$CRON_API_URL/api/internal/cron/run-all" \
+          response=$(curl -sSL -X POST "$CRON_API_URL/api/internal/cron/run-all" \
             -H "Content-Type: application/json" \
             -H "x-cron-secret: $CRON_SECRET" \
             -d '{"sources":["reddit","hackernews","rss"],"limitPerSource":25,"hoursBack":24,"maxTrends":15,"minMentions":4}')
