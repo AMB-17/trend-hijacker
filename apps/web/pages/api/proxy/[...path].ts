@@ -1,7 +1,15 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const apiUrl = (process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/$/, '')
+  const configuredApiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
+  const apiUrl = (configuredApiUrl || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '')).replace(/\/$/, '')
+
+  if (!apiUrl) {
+    return res.status(500).json({
+      error: 'API proxy is not configured. Set API_URL on the web deployment environment.',
+    })
+  }
+
   const pathParts = Array.isArray(req.query.path) ? req.query.path : []
   const queryString = req.url?.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''
   const targetUrl = `${apiUrl}/${pathParts.join('/')}${queryString}`
