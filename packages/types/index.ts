@@ -1,5 +1,12 @@
 // Shared types for TREND HIJACKER
 
+export * from './schemas';
+export * from './src/trend.types';
+export * from './src/post.types';
+export * from './src/api.types';
+export * from './src/queue.types';
+export * from './src/scraper.types';
+
 export type TierType = 'free' | 'premium' | 'enterprise';
 
 export interface User {

@@ -2,8 +2,9 @@
   "extends": "../config/typescript-config/node.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "moduleResolution": "node"
   },
-  "include": ["src/**/*"],
+  "include": ["index.ts", "schemas.ts", "src/**/*"],
   "exclude": ["node_modules", "dist"]
 }
