@@ -29,11 +29,16 @@ function getOrigin(req: NextApiRequest): string {
 
 function shouldTryLocalFallback(pathParts: string[]): boolean {
   const joined = pathParts.join('/')
-  return (
-    joined.startsWith('api/signals/') ||
-    joined.startsWith('api/opportunities') ||
-    joined.startsWith('api/trends')
-  )
+  if (!joined.startsWith('api/')) {
+    return false
+  }
+
+  // Never proxy internal maintenance routes through local fallback.
+  if (joined.startsWith('api/internal/')) {
+    return false
+  }
+
+  return true
 }
 
 function buildForwardHeaders(req: NextApiRequest): Record<string, string> {

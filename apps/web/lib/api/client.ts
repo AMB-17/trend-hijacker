@@ -91,18 +91,31 @@ export interface Post {
 class ApiClient {
   private baseUrl: string;
 
+  private normalizeClientBaseUrl(value?: string): string {
+    const candidate = value?.trim();
+    if (!candidate) {
+      return '/api/proxy';
+    }
+
+    // Keep client traffic on same-origin proxy routes to preserve local fallback behavior.
+    if (candidate.startsWith('/')) {
+      return candidate.replace(/\/$/, '');
+    }
+
+    return '/api/proxy';
+  }
+
   constructor() {
-    const configuredBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-    this.baseUrl = configuredBaseUrl && configuredBaseUrl.length > 0
-      ? configuredBaseUrl.replace(/\/$/, '')
-      : '/api/proxy';
+    this.baseUrl = this.normalizeClientBaseUrl(process.env.NEXT_PUBLIC_API_URL);
   }
 
   private isCriticalDashboardEndpoint(endpoint: string): boolean {
     return (
       endpoint.startsWith('/api/signals/early') ||
       endpoint.startsWith('/api/signals/exploding') ||
-      endpoint.startsWith('/api/opportunities')
+      endpoint.startsWith('/api/opportunities') ||
+      endpoint === '/api/trends' ||
+      endpoint.startsWith('/api/trends?')
     );
   }
 
@@ -148,6 +161,19 @@ class ApiClient {
             },
             avgOpportunityScore: 0,
           },
+        },
+      };
+    }
+
+    if (endpoint === '/api/trends' || endpoint.startsWith('/api/trends?')) {
+      return {
+        success: true,
+        data: [],
+        meta: {
+          total: 0,
+          hasMore: false,
+          limit: 20,
+          offset: 0,
         },
       };
     }
