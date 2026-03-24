@@ -18,7 +18,7 @@ export function getPool(): pg.Pool {
       max: 20,
     });
 
-    pool.on('error', (err: any) => {
+    pool.on('error', (err: Error) => {
       console.error('Unexpected error on idle client', err);
     });
   }
@@ -38,7 +38,7 @@ export async function closePool() {
  */
 export async function query<T extends pg.QueryResultRow = pg.QueryResultRow>(
   sql: string,
-  params?: any[]
+  params?: unknown[]
 ): Promise<pg.QueryResult<T>> {
   return getPool().query<T>(sql, params);
 }

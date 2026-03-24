@@ -13,13 +13,33 @@ function shouldTryLocalFallback(pathParts: string[]): boolean {
   return joined.startsWith('api/signals/') || joined.startsWith('api/opportunities')
 }
 
-async function proxyFetch(targetUrl: string, req: NextApiRequest, res: NextApiResponse) {
-  const response = await fetch(targetUrl, {
-    method: req.method,
-    headers: req.headers as any,
-    body: req.body ? JSON.stringify(req.body) : undefined,
-  })
+function buildForwardHeaders(req: NextApiRequest): Record<string, string> {
+  const blockedHeaders = new Set([
+    'host',
+    'connection',
+    'content-length',
+    'transfer-encoding',
+    'accept-encoding',
+  ])
 
+  const headers: Record<string, string> = {}
+  for (const [key, value] of Object.entries(req.headers)) {
+    const lowerKey = key.toLowerCase()
+    if (blockedHeaders.has(lowerKey) || typeof value === 'undefined') {
+      continue
+    }
+
+    headers[lowerKey] = Array.isArray(value) ? value.join(', ') : value
+  }
+
+  if (!headers['content-type'] && req.body && req.method !== 'GET' && req.method !== 'HEAD') {
+    headers['content-type'] = 'application/json'
+  }
+
+  return headers
+}
+
+async function readProxyResponse(response: Response, res: NextApiResponse) {
   const text = await response.text()
 
   try {
@@ -28,6 +48,16 @@ async function proxyFetch(targetUrl: string, req: NextApiRequest, res: NextApiRe
   } catch {
     return res.status(response.status).send(text)
   }
+}
+
+async function proxyFetch(targetUrl: string, req: NextApiRequest, res: NextApiResponse) {
+  const response = await fetch(targetUrl, {
+    method: req.method,
+    headers: buildForwardHeaders(req),
+    body: req.body ? JSON.stringify(req.body) : undefined,
+  })
+
+  return readProxyResponse(response, res)
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -61,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const response = await fetch(targetUrl, {
       method: req.method,
-      headers: req.headers as any,
+      headers: buildForwardHeaders(req),
       body: req.body ? JSON.stringify(req.body) : undefined,
     })
 
@@ -69,13 +99,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return proxyFetch(localTargetUrl, req, res)
     }
 
-    const text = await response.text()
-    try {
-      const data = JSON.parse(text)
-      return res.status(response.status).json(data)
-    } catch {
-      return res.status(response.status).send(text)
-    }
+    return readProxyResponse(response, res)
   } catch (error: any) {
     if (shouldTryLocalFallback(pathParts)) {
       try {

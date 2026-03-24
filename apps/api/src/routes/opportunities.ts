@@ -1,4 +1,5 @@
 import { FastifyInstance } from "fastify";
+import { LimitQuerySchema } from "@packages/types";
 import { opportunityMapService } from "../services/opportunity-map.service";
 
 export default async function opportunitiesRoutes(app: FastifyInstance) {
@@ -14,9 +15,19 @@ export default async function opportunitiesRoutes(app: FastifyInstance) {
 
   // GET /api/opportunities/quick-wins - Get quick wins
   app.get("/quick-wins", async (request, reply) => {
-    const { limit = 20 } = request.query as any;
+    const parsed = LimitQuerySchema.safeParse(request.query ?? {});
+    if (!parsed.success) {
+      reply.code(400);
+      return {
+        success: false,
+        error: {
+          message: "Invalid query parameters",
+          details: parsed.error.flatten(),
+        },
+      };
+    }
 
-    const quickWins = await opportunityMapService.getQuickWins(parseInt(limit));
+    const quickWins = await opportunityMapService.getQuickWins(parsed.data.limit);
 
     return {
       success: true,

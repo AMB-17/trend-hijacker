@@ -219,20 +219,51 @@ Built-in feature flags:
 
 ## 🔒 Security
 
-✅ HTTPS/TLS ready
-✅ SQL injection prevention
-✅ Rate limiting
-✅ Environment-based secrets
-✅ CORS whitelisting
+✅ **Comprehensive Security Audit Complete (2026-03-24)**
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ Timing-safe secret comparisons
+- ✅ CORS strict origin validation
+- ✅ Helmet security headers (CSP, HSTS, XSS protection)
+- ✅ Request size limits (1MB)
+- ✅ Environment variable validation at startup
+- ✅ Zero exposed secrets in codebase
+- ✅ Rate limiting (100 req/min per IP)
+- ✅ HTTPS/TLS ready
+
+**Audit Report:** See [AUDIT_SUMMARY.md](AUDIT_SUMMARY.md) for complete details.
 
 ## 🧪 Testing & Linting
 
 ```bash
-pnpm type-check    # Type checking
-pnpm lint          # Linting
-pnpm format        # Format code
-pnpm build         # Build all
+# Run all tests
+pnpm test
+
+# Run with coverage (>80% target)
+pnpm test:coverage
+
+# Watch mode for development
+pnpm test:watch
+
+# Interactive test UI
+pnpm test:ui
+
+# Run specific test suites
+pnpm test:api          # API tests only
+pnpm test:web          # Web tests only
+
+# Type checking & linting
+pnpm type-check        # TypeScript validation
+pnpm lint              # ESLint
+pnpm format            # Prettier code formatting
+pnpm build             # Build all packages
 ```
+
+**Testing Infrastructure:**
+- Vitest for unit & integration tests
+- Testing Library for React components
+- Supertest for API endpoint testing
+- MSW for API mocking
+- Code coverage reporting with v8
 
 ## 📄 License
 

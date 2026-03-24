@@ -1,6 +1,6 @@
 'use client';
 
-import type { TrendFilters, ApiResponse } from '@packages/types';
+import type { TrendFilters } from '@packages/types';
 
 export interface Trend {
   id: string;
@@ -22,7 +22,13 @@ export interface Trend {
   targetAudience?: string;
   marketPotential?: string;
   keywords: string[];
-  posts?: any[];
+  posts?: Array<{
+    id: string;
+    title: string;
+    url: string;
+    upvotes: number;
+    comments: number;
+  }>;
 }
 
 export interface OpportunityMapItem {
@@ -35,6 +41,14 @@ export interface OpportunityMapItem {
   discussionVolume: number;
   stage: string;
   postCount: number;
+}
+
+export interface OpportunityInsights {
+  topQuickWin: OpportunityMapItem | null;
+  topBigBet: OpportunityMapItem | null;
+  mostDiscussed: OpportunityMapItem | null;
+  fastestGrowing: OpportunityMapItem | null;
+  recommendations: string[];
 }
 
 export interface OpportunityMapData {
@@ -62,6 +76,18 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export interface Post {
+  id: string;
+  title: string;
+  content: string;
+  url: string;
+  author: string | null;
+  upvotes: number;
+  comments: number;
+  publishedAt: string;
+  source: string;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -72,10 +98,92 @@ class ApiClient {
       : '/api/proxy';
   }
 
+  private isCriticalDashboardEndpoint(endpoint: string): boolean {
+    return (
+      endpoint.startsWith('/api/signals/early') ||
+      endpoint.startsWith('/api/signals/exploding') ||
+      endpoint.startsWith('/api/opportunities')
+    );
+  }
+
+  private getSafeCriticalFallback(endpoint: string): unknown {
+    if (endpoint.startsWith('/api/signals/')) {
+      return { success: true, data: [] };
+    }
+
+    if (endpoint.startsWith('/api/opportunities/insights')) {
+      return {
+        success: true,
+        data: {
+          topQuickWin: null,
+          topBigBet: null,
+          mostDiscussed: null,
+          fastestGrowing: null,
+          recommendations: [],
+        },
+      };
+    }
+
+    if (endpoint.startsWith('/api/opportunities/quick-wins')) {
+      return { success: true, data: [] };
+    }
+
+    if (endpoint.startsWith('/api/opportunities')) {
+      return {
+        success: true,
+        data: {
+          items: [],
+          quadrants: {
+            quickWins: [],
+            bigBets: [],
+            fillIns: [],
+            hardSlogs: [],
+          },
+          summary: {
+            total: 0,
+            byStage: {
+              early_signal: 0,
+              emerging: 0,
+              exploding: 0,
+            },
+            avgOpportunityScore: 0,
+          },
+        },
+      };
+    }
+
+    return null;
+  }
+
+  private async fetchLocalFirst<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+    if (!this.isCriticalDashboardEndpoint(endpoint)) {
+      return null;
+    }
+
+    const localResponse = await fetch(endpoint, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+
+    if (!localResponse.ok) {
+      return null;
+    }
+
+    return await localResponse.json();
+  }
+
   private async fetch<T>(
     endpoint: string,
     options?: RequestInit
   ): Promise<T> {
+    const localFirst = await this.fetchLocalFirst<T>(endpoint, options).catch(() => null);
+    if (localFirst !== null) {
+      return localFirst;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     try {
@@ -88,6 +196,15 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        const fallback = await this.fetchLocalFirst<T>(endpoint, options).catch(() => null);
+        if (fallback !== null) {
+          return fallback;
+        }
+
+        if (this.isCriticalDashboardEndpoint(endpoint)) {
+          return this.getSafeCriticalFallback(endpoint) as T;
+        }
+
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.error?.message || `API error: ${response.status}`
@@ -96,6 +213,15 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
+      const fallback = await this.fetchLocalFirst<T>(endpoint, options).catch(() => null);
+      if (fallback !== null) {
+        return fallback;
+      }
+
+      if (this.isCriticalDashboardEndpoint(endpoint)) {
+        return this.getSafeCriticalFallback(endpoint) as T;
+      }
+
       console.error(`API request failed for ${endpoint}:`, error);
       throw error;
     }
@@ -115,7 +241,7 @@ class ApiClient {
     const queryString = params.toString();
     const endpoint = `/api/trends${queryString ? `?${queryString}` : ''}`;
 
-    const response = await this.fetch<any>(endpoint);
+    const response = await this.fetch<{ data: Trend[]; meta?: { total: number; hasMore: boolean; limit: number; offset: number } }>(endpoint);
     return {
       data: response.data,
       total: response.meta?.total || 0,
@@ -125,44 +251,44 @@ class ApiClient {
   }
 
   async getTrendById(id: string): Promise<Trend> {
-    const response = await this.fetch<any>(`/api/trends/${id}`);
+    const response = await this.fetch<{ data: Trend }>(`/api/trends/${id}`);
     return response.data;
   }
 
   async getEarlySignals(limit: number = 20): Promise<Trend[]> {
-    const response = await this.fetch<any>(`/api/signals/early?limit=${limit}`);
+    const response = await this.fetch<{ data: Trend[] }>(`/api/signals/early?limit=${limit}`);
     return response.data;
   }
 
   async getExplodingTrends(limit: number = 20): Promise<Trend[]> {
-    const response = await this.fetch<any>(`/api/signals/exploding?limit=${limit}`);
+    const response = await this.fetch<{ data: Trend[] }>(`/api/signals/exploding?limit=${limit}`);
     return response.data;
   }
 
   async getOpportunityMap(): Promise<OpportunityMapData> {
-    const response = await this.fetch<any>('/api/opportunities');
+    const response = await this.fetch<{ data: OpportunityMapData }>('/api/opportunities');
     return response.data;
   }
 
   async getQuickWins(limit: number = 20): Promise<OpportunityMapItem[]> {
-    const response = await this.fetch<any>(`/api/opportunities/quick-wins?limit=${limit}`);
+    const response = await this.fetch<{ data: OpportunityMapItem[] }>(`/api/opportunities/quick-wins?limit=${limit}`);
     return response.data;
   }
 
-  async getOpportunityInsights(): Promise<any> {
-    const response = await this.fetch<any>('/api/opportunities/insights');
+  async getOpportunityInsights(): Promise<OpportunityInsights> {
+    const response = await this.fetch<{ data: OpportunityInsights }>('/api/opportunities/insights');
     return response.data;
   }
 
   async searchTrends(query: string, limit: number = 20): Promise<Trend[]> {
-    const response = await this.fetch<any>(
+    const response = await this.fetch<{ data: Trend[] }>(
       `/api/search?q=${encodeURIComponent(query)}&limit=${limit}`
     );
     return response.data;
   }
 
-  async searchPosts(query: string, limit: number = 20): Promise<any[]> {
-    const response = await this.fetch<any>(
+  async searchPosts(query: string, limit: number = 20): Promise<Post[]> {
+    const response = await this.fetch<{ data: Post[] }>(
       `/api/search/posts?q=${encodeURIComponent(query)}&limit=${limit}`
     );
     return response.data;
@@ -173,7 +299,7 @@ class ApiClient {
       ? `/api/search/suggestions?q=${encodeURIComponent(query)}&limit=${limit}`
       : `/api/search/suggestions?limit=${limit}`;
 
-    const response = await this.fetch<any>(endpoint);
+    const response = await this.fetch<{ data: string[] }>(endpoint);
     return response.data;
   }
 }

@@ -1,5 +1,9 @@
+import { validateEnv } from "./config/env-validator";
 import { logger } from "@packages/utils";
 import { buildApp } from "./app";
+
+// Validate environment variables before starting the server
+validateEnv();
 
 const start = async () => {
   try {

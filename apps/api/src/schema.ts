@@ -133,8 +133,7 @@ export const queries = {
       `SELECT * FROM trends ORDER BY opportunity_score DESC, created_at DESC LIMIT $1 OFFSET $2`,
     getById: `SELECT * FROM trends WHERE id = $1`,
     getByStatus: `SELECT * FROM trends WHERE status = $1 ORDER BY opportunity_score DESC LIMIT $2`,
-    top: (timeframe: string) =>
-      `SELECT * FROM trends WHERE created_at > NOW() - INTERVAL '${timeframe}' ORDER BY opportunity_score DESC LIMIT 10`,
+    top: `SELECT * FROM trends WHERE created_at > NOW() - INTERVAL $1 ORDER BY opportunity_score DESC LIMIT 10`,
     create: `
       INSERT INTO trends (title, summary, opportunity_score, velocity_score, problem_intensity, novelty_score, discussion_count, source_count, status, category, suggested_ideas)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)

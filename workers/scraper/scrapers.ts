@@ -4,7 +4,6 @@
  */
 
 import fetch from 'node-fetch';
-import { RedisQueue } from './redis-queue';
 import { normalizeText, extractKeywords, isLikelySpam } from '@packages/nlp';
 
 export interface ScrapedDiscussion {

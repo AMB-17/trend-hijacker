@@ -145,7 +145,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       }
 
       try {
-        const result = await query(queries.trends.top(timeframe));
+        const result = await query(queries.trends.top, [timeframe]);
         return { data: result.rows };
       } catch (error) {
         reply.status(500).send({ error: 'Failed to fetch trends' });

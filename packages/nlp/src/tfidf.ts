@@ -1,5 +1,7 @@
 import natural from "natural";
-import { removeStopwords } from "stopword";
+const { removeStopwords } = require("stopword") as {
+  removeStopwords: (tokens: string[]) => string[];
+};
 
 const TfIdf = natural.TfIdf;
 const tokenizer = new natural.WordTokenizer();
@@ -60,9 +62,9 @@ export class TFIDFAnalyzer {
     const filtered = removeStopwords(tokens);
 
     return filtered
-      .filter((token) => token.length > 2) // Remove short tokens
-      .filter((token) => !/^\d+$/.test(token)) // Remove pure numbers
-      .filter((token) => /^[a-z0-9-]+$/.test(token)); // Only alphanumeric and hyphens
+      .filter((token: string) => token.length > 2) // Remove short tokens
+      .filter((token: string) => !/^\d+$/.test(token)) // Remove pure numbers
+      .filter((token: string) => /^[a-z0-9-]+$/.test(token)); // Only alphanumeric and hyphens
   }
 
   getMostImportantTerms(documentIndex: number, topN: number = 10): Array<{ term: string; score: number }> {

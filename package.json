@@ -12,7 +12,12 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
-    "test": "turbo run test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:api": "pnpm --filter @trend-hijacker/api test",
+    "test:web": "pnpm --filter @trend-hijacker/web test",
     "clean": "turbo run clean && rm -rf node_modules",
     "db:generate": "pnpm --filter @packages/database db:generate",
     "db:migrate": "pnpm --filter @packages/database db:migrate",
@@ -23,10 +28,22 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@testing-library/user-event": "^14.6.1",
     "@turbo/gen": "^2.3.3",
+    "@types/supertest": "^7.2.0",
+    "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.1",
+    "@vitest/ui": "^4.1.1",
+    "jsdom": "^29.0.1",
+    "msw": "^2.12.14",
     "prettier": "^3.4.2",
+    "supertest": "^7.2.2",
     "turbo": "^2.3.3",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.1"
   },
   "packageManager": "pnpm@9.15.1",
   "engines": {

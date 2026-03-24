@@ -84,6 +84,29 @@ export const CursorPaginationSchema = z.object({
   limit: z.number().int().positive().max(100).default(20),
 });
 
+export const LimitQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+});
+
+export const TrendsListQuerySchema = z.object({
+  stage: z.string().min(1).max(64).optional(),
+  status: z.string().min(1).max(64).optional(),
+  minScore: z.coerce.number().min(0).max(100).optional(),
+  sortBy: z.enum(["score", "date", "velocity", "volume"]).default("score"),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+  offset: z.coerce.number().int().min(0).max(10_000).default(0),
+});
+
+export const SearchQuerySchema = z.object({
+  q: z.string().trim().min(1).max(200),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+});
+
+export const SearchSuggestionsQuerySchema = z.object({
+  q: z.string().trim().min(1).max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
+
 export type User = z.infer<typeof UserSchema>;
 export type Trend = z.infer<typeof TrendSchema>;
 export type Discussion = z.infer<typeof DiscussionSchema>;

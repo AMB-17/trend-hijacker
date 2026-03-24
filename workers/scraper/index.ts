@@ -6,45 +6,47 @@
 import { Worker } from 'bullmq';
 import { getScrapeQueue, getProcessingQueue, getRedisClient, scheduleScrapers } from './redis-queue';
 import { MasterScraper } from './scrapers';
-import pg from 'pg';
+const { Pool } = require('pg') as {
+  Pool: new (config: Record<string, unknown>) => any;
+};
 
-const { Pool } = pg;
+type DiscussionSource = 'reddit' | 'hackernews' | 'producthunt' | 'indiehackers' | 'rss';
 
-let dbPool: pg.Pool;
-
-/**
- * Initialize database connection
- */
-function initDB() {
-  dbPool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 5,
-  });
+interface ScrapedDiscussion {
+  source: DiscussionSource;
+  sourceId: string;
+  url: string;
+  title: string;
+  content: string;
+  author?: string;
+  upvotes: number;
+  commentsCount: number;
+  createdAt: string | Date;
 }
+
+const dbPool: any = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5,
+});
 
 /**
  * Save scraped discussions to database
  */
-async function saveDiscussions(discussions: any[]) {
-  const client = await dbPool.connect();
+async function saveDiscussions(discussions: ScrapedDiscussion[]) {
+  for (const discussion of discussions) {
+    const { source, sourceId, url, title, content, author, upvotes, commentsCount, createdAt } = discussion;
 
-  try {
-    for (const discussion of discussions) {
-      const { source, sourceId, url, title, content, author, upvotes, commentsCount, createdAt } = discussion;
-
-      await client.query(
-        `INSERT INTO discussions (source, source_id, url, title, content, author, upvotes, comments_count, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         ON CONFLICT (source_id) DO UPDATE SET 
-           upvotes = EXCLUDED.upvotes,
-           comments_count = EXCLUDED.comments_count`,
-        [source, sourceId, url, title, content, author, upvotes, commentsCount, createdAt]
-      );
-    }
-    console.log(`✅ Saved ${discussions.length} discussions to database`);
-  } finally {
-    client.release();
+    await dbPool.query(
+      `INSERT INTO discussions (source, source_id, url, title, content, author, upvotes, comments_count, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (source_id) DO UPDATE SET 
+         upvotes = EXCLUDED.upvotes,
+         comments_count = EXCLUDED.comments_count`,
+      [source, sourceId, url, title, content, author, upvotes, commentsCount, createdAt]
+    );
   }
+
+  console.log(`✅ Saved ${discussions.length} discussions to database`);
 }
 
 /**
@@ -60,7 +62,7 @@ async function setupScraperWorker() {
     console.log(`🕷️  Processing scrape job for source: ${source}`);
 
     try {
-      let discussions = [];
+      let discussions: ScrapedDiscussion[] = [];
 
       // Call appropriate scraper based on source
       switch (source) {
@@ -120,7 +122,6 @@ async function setupScraperWorker() {
 async function main() {
   console.log('🚀 Starting Scraper Worker...');
 
-  initDB();
   await setupScraperWorker();
   scheduleScrapers();
 
@@ -129,7 +130,7 @@ async function main() {
 
   // Run initial scrape
   const scrapeQueue = getScrapeQueue();
-  for (const source of ['reddit', 'hackernews', 'producthunt', 'indiehackers', 'rss']) {
+  for (const source of ['reddit', 'hackernews', 'producthunt', 'indiehackers', 'rss'] as const) {
     await scrapeQueue.add('scrape', { source });
   }
 }
@@ -142,6 +143,5 @@ main().catch(err => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
-  await dbPool.end();
   process.exit(0);
 });

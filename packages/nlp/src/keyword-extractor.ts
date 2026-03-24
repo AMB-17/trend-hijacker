@@ -1,5 +1,7 @@
 import natural from "natural";
-import { removeStopwords } from "stopword";
+const { removeStopwords } = require("stopword") as {
+  removeStopwords: (tokens: string[]) => string[];
+};
 
 const tokenizer = new natural.WordTokenizer();
 
@@ -22,7 +24,7 @@ export class KeywordExtractor {
 
     // Count frequencies
     const frequencies = new Map<string, number>();
-    filtered.forEach((token) => {
+    filtered.forEach((token: string) => {
       if (token.length >= minLength && /^[a-z0-9-]+$/.test(token)) {
         frequencies.set(token, (frequencies.get(token) || 0) + 1);
       }

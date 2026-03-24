@@ -167,6 +167,139 @@ async function scrapeRss(limitPerSource: number): Promise<IngestionDiscussion[]>
   return discussions;
 }
 
+async function scrapeProductHunt(limitPerSource: number): Promise<IngestionDiscussion[]> {
+  // Product Hunt API requires authentication - check for API key
+  const apiKey = process.env.PRODUCTHUNT_API_KEY;
+
+  if (!apiKey || apiKey.trim() === '') {
+    console.warn('PRODUCTHUNT_API_KEY not set, skipping Product Hunt scraping');
+    return [];
+  }
+
+  const discussions: IngestionDiscussion[] = [];
+
+  try {
+    const response = await fetch('https://api.producthunt.com/v2/api/graphql', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          query {
+            posts(first: ${limitPerSource}, order: VOTES) {
+              edges {
+                node {
+                  id
+                  name
+                  tagline
+                  description
+                  votesCount
+                  commentsCount
+                  createdAt
+                  url
+                }
+              }
+            }
+          }
+        `,
+      }),
+    });
+
+    if (!response.ok) {
+      console.error(`Product Hunt API error: ${response.status}`);
+      return discussions;
+    }
+
+    const data: unknown = await response.json();
+    const dataObj = data as { data?: { posts?: { edges?: Array<{ node: Record<string, unknown> }> } } };
+    const posts = dataObj.data?.posts?.edges ?? [];
+
+    for (const edge of posts) {
+      const node = edge.node;
+      const id = String(node.id ?? '');
+      if (!id) continue;
+
+      const title = sanitizeText(String(node.name ?? ''), 'Untitled Product Hunt Post');
+      const description = sanitizeText(String(node.description ?? node.tagline ?? ''), title);
+      const url = String(node.url ?? `https://www.producthunt.com/posts/${id}`);
+
+      discussions.push({
+        source: 'producthunt',
+        sourceId: `ph_${id}`,
+        url,
+        title,
+        content: description,
+        upvotes: Number(node.votesCount ?? 0),
+        commentsCount: Number(node.commentsCount ?? 0),
+        createdAt: new Date(String(node.createdAt ?? new Date().toISOString())),
+      });
+    }
+
+    console.log(`Scraped ${discussions.length} posts from Product Hunt`);
+    return discussions;
+  } catch (error) {
+    console.error('Error scraping Product Hunt:', error);
+    return discussions;
+  }
+}
+
+async function scrapeIndieHackers(limitPerSource: number): Promise<IngestionDiscussion[]> {
+  const discussions: IngestionDiscussion[] = [];
+
+  try {
+    // Indie Hackers doesn't have an official API, but we can scrape their public endpoint
+    const response = await fetch(
+      `https://www.indiehackers.com/api/posts?limit=${limitPerSource}`,
+      {
+        headers: {
+          'User-Agent': 'TrendHijackerBatch/1.0',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Indie Hackers scraping error: ${response.status}`);
+      return discussions;
+    }
+
+    const data: unknown = await response.json();
+    const dataObj = data as { posts?: Array<Record<string, unknown>> };
+    const posts = dataObj.posts ?? [];
+
+    for (const post of posts) {
+      const id = String(post.id ?? '');
+      if (!id) continue;
+
+      const title = sanitizeText(String(post.title ?? ''), 'Untitled Indie Hackers Post');
+      const content = sanitizeText(String(post.body ?? ''), title);
+      const slug = String(post.slug ?? id);
+      const url = `https://www.indiehackers.com/post/${slug}`;
+
+      discussions.push({
+        source: 'indiehackers',
+        sourceId: `ih_${id}`,
+        url,
+        title,
+        content,
+        author: post.author && typeof post.author === 'object'
+          ? String((post.author as Record<string, unknown>).username ?? '')
+          : undefined,
+        upvotes: Number(post.votes ?? 0),
+        commentsCount: Number(post.comment_count ?? 0),
+        createdAt: new Date(String(post.created_at ?? new Date().toISOString())),
+      });
+    }
+
+    console.log(`Scraped ${discussions.length} posts from Indie Hackers`);
+    return discussions;
+  } catch (error) {
+    console.error('Error scraping Indie Hackers:', error);
+    return discussions;
+  }
+}
+
 async function scrapeSource(source: DiscussionSource, limitPerSource: number): Promise<IngestionDiscussion[]> {
   switch (source) {
     case "reddit":
@@ -176,8 +309,9 @@ async function scrapeSource(source: DiscussionSource, limitPerSource: number): P
     case "rss":
       return scrapeRss(limitPerSource);
     case "producthunt":
+      return scrapeProductHunt(limitPerSource);
     case "indiehackers":
-      return [];
+      return scrapeIndieHackers(limitPerSource);
     default:
       return [];
   }

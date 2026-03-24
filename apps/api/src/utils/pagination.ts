@@ -25,7 +25,7 @@ export interface PaginatedResponse<T> {
 /**
  * Parse pagination parameters from query
  */
-export function parsePaginationParams(query: any): {
+export function parsePaginationParams(query: Record<string, unknown>): {
   limit: number;
   offset: number;
 } {
@@ -94,7 +94,7 @@ export interface CursorPaginatedResponse<T> {
 /**
  * Parse cursor pagination parameters
  */
-export function parseCursorParams(query: any): {
+export function parseCursorParams(query: Record<string, unknown>): {
   limit: number;
   cursor?: string;
 } {
@@ -144,7 +144,7 @@ export interface SortParams {
  * Parse sorting parameters
  */
 export function parseSortParams(
-  query: any,
+  query: Record<string, unknown>,
   allowedFields: string[] = [],
   defaultField: string = "createdAt"
 ): SortParams {
@@ -174,14 +174,14 @@ export function toPrismaOrderBy(sortParams: SortParams): Record<string, "asc" | 
  * Filtering Parameters
  */
 export interface FilterParams {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
  * Parse filter parameters
  */
 export function parseFilterParams(
-  query: any,
+  query: Record<string, unknown>,
   allowedFilters: string[] = []
 ): FilterParams {
   const filters: FilterParams = {};
@@ -207,7 +207,7 @@ export interface NumericRangeFilter {
  * Parse numeric range (e.g., minScore, maxScore)
  */
 export function parseNumericRange(
-  query: any,
+  query: Record<string, unknown>,
   prefix: string
 ): NumericRangeFilter {
   const range: NumericRangeFilter = {};
@@ -238,7 +238,7 @@ export interface DateRangeFilter {
  * Parse date range
  */
 export function parseDateRange(
-  query: any,
+  query: Record<string, unknown>,
   prefix: string = "date"
 ): DateRangeFilter {
   const range: DateRangeFilter = {};

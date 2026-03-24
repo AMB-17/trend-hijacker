@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEMO_TRENDS_EARLY } from '../_lib/demo-data'
+import { DEMO_QUICK_WINS } from '../_lib/demo-data'
 
 function parseLimit(value: unknown, defaultValue: number): number {
   const raw = Array.isArray(value) ? value[0] : value
@@ -14,5 +14,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const limit = parseLimit(req.query.limit, 20)
-  return res.status(200).json({ success: true, data: DEMO_TRENDS_EARLY.slice(0, limit) })
+  return res.status(200).json({ success: true, data: DEMO_QUICK_WINS.slice(0, limit) })
 }

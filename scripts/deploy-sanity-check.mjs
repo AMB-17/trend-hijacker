@@ -27,6 +27,18 @@ function withBypass(url) {
   return `${url}${joiner}x-vercel-set-bypass-cookie=true&x-vercel-protection-bypass=${encodeURIComponent(vercelBypassToken)}`;
 }
 
+function sanitizeUrlForLogs(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.searchParams.has("x-vercel-protection-bypass")) {
+      parsed.searchParams.set("x-vercel-protection-bypass", "[REDACTED]");
+    }
+    return parsed.toString();
+  } catch {
+    return url.replace(/x-vercel-protection-bypass=[^&]+/g, "x-vercel-protection-bypass=[REDACTED]");
+  }
+}
+
 function buildBypassHeaders(extraHeaders = {}) {
   if (!vercelBypassToken) {
     return extraHeaders;
@@ -73,7 +85,7 @@ async function main() {
   const healthUrl = `${baseUrl}/health`;
 
   try {
-    console.log(`Checking health endpoint: ${withBypass(healthUrl)}`);
+    console.log(`Checking health endpoint: ${sanitizeUrlForLogs(withBypass(healthUrl))}`);
     const healthResponse = await fetchWithBypass(healthUrl);
     healthJson = await assertJsonResponse("Health check", healthResponse);
   } catch (error) {
@@ -81,7 +93,7 @@ async function main() {
     console.warn(`Direct health check failed. Retrying through proxy route. Reason: ${message}`);
 
     const proxyHealthUrl = `${baseUrl}/api/proxy/health`;
-    console.log(`Checking proxied health endpoint: ${withBypass(proxyHealthUrl)}`);
+    console.log(`Checking proxied health endpoint: ${sanitizeUrlForLogs(withBypass(proxyHealthUrl))}`);
     const proxyHealthResponse = await fetchWithBypass(proxyHealthUrl);
     healthJson = await assertJsonResponse("Health check via proxy", proxyHealthResponse);
     apiBaseUrl = `${baseUrl}/api/proxy`;
@@ -94,7 +106,7 @@ async function main() {
   console.log("Health endpoint passed.");
 
   const batchUrl = `${apiBaseUrl}/api/internal/cron/run-all`;
-  console.log(`Triggering batch run: ${withBypass(batchUrl)}`);
+  console.log(`Triggering batch run: ${sanitizeUrlForLogs(withBypass(batchUrl))}`);
   const batchResponse = await fetchWithBypass(batchUrl, {
     method: "POST",
     headers: {
