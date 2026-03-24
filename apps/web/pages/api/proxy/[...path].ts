@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-function normalizeApiUrl(value?: string): string {
+export function normalizeApiUrl(value?: string): string {
   const candidate = value?.trim()
   if (!candidate) {
     return ''
@@ -27,7 +27,7 @@ function getOrigin(req: NextApiRequest): string {
   return `${scheme}://${host}`
 }
 
-function shouldTryLocalFallback(pathParts: string[]): boolean {
+export function shouldTryLocalFallback(pathParts: string[]): boolean {
   const joined = pathParts.join('/')
   if (!joined.startsWith('api/')) {
     return false
@@ -41,7 +41,7 @@ function shouldTryLocalFallback(pathParts: string[]): boolean {
   return true
 }
 
-function buildForwardHeaders(req: NextApiRequest): Record<string, string> {
+export function buildForwardHeaders(req: NextApiRequest): Record<string, string> {
   const blockedHeaders = new Set([
     'host',
     'connection',

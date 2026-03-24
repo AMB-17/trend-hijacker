@@ -33,13 +33,15 @@
 | REV-005 | Engineering | P1 | Type-check failure in scoring novelty detector (missing return) | packages/scoring/src/novelty-detector.ts | pnpm.cmd type-check | Software Engineer Lead | Closed | 2026-03-24 |
 | REV-006 | Engineering | P1 | Type-check failure in API pagination/test utils unknown narrowing and explicit mock typing | apps/api/src/utils/pagination.ts; apps/api/src/test-utils/test-helpers.ts | pnpm.cmd type-check | Software Engineer Lead | Closed | 2026-03-24 |
 | REV-007 | QA | P2 | Coverage thresholds were bootstrapped to establish a passing gate; raise thresholds as suite expands | vitest.config.ts; docs/review/evidence/baseline-20260324-232006/coverage.txt | pnpm.cmd test:coverage | Beta Test Lead | Open | TBD |
+| REV-008 | Security | P1 | Added automated cron auth/idempotency and proxy header-hardening tests | apps/api/src/routes/internal.test.ts; apps/web/lib/api/proxy-security.test.ts | pnpm.cmd test:coverage | Security Master | Closed | 2026-03-24 |
+| REV-009 | Engineering | P1 | Fastify plugin compatibility mismatch discovered: @fastify/helmet expects Fastify 4.x while app uses Fastify 5.x | apps/api/src/app.ts; apps/api/package.json | pnpm.cmd test (attempted app-level security test) | Software Engineer Lead | Open | TBD |
 
 ## Critical Paths to Re-Verify
 
 - [ ] API health and readiness endpoints
 - [ ] Dashboard first load and fallback behavior
 - [ ] Trends list and trend detail navigation
-- [ ] Internal cron run-all authorization behavior
+- [x] Internal cron run-all authorization behavior
 - [ ] Ingestion to scoring pipeline continuity
 
 ## Exit Decision Summary
