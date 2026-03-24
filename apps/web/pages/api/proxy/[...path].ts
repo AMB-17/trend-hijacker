@@ -10,7 +10,11 @@ function getOrigin(req: NextApiRequest): string {
 
 function shouldTryLocalFallback(pathParts: string[]): boolean {
   const joined = pathParts.join('/')
-  return joined.startsWith('api/signals/') || joined.startsWith('api/opportunities')
+  return (
+    joined.startsWith('api/signals/') ||
+    joined.startsWith('api/opportunities') ||
+    joined.startsWith('api/trends')
+  )
 }
 
 function buildForwardHeaders(req: NextApiRequest): Record<string, string> {
