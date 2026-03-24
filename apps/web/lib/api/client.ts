@@ -115,7 +115,8 @@ class ApiClient {
       endpoint.startsWith('/api/signals/exploding') ||
       endpoint.startsWith('/api/opportunities') ||
       endpoint === '/api/trends' ||
-      endpoint.startsWith('/api/trends?')
+      endpoint.startsWith('/api/trends?') ||
+      endpoint.startsWith('/api/trends/')
     );
   }
 
@@ -174,6 +175,32 @@ class ApiClient {
           hasMore: false,
           limit: 20,
           offset: 0,
+        },
+      };
+    }
+
+    if (endpoint.startsWith('/api/trends/')) {
+      const trendId = endpoint.split('/').pop() || 'trend-fallback';
+      const now = new Date().toISOString();
+
+      return {
+        success: true,
+        data: {
+          id: trendId,
+          title: 'Trend data temporarily unavailable',
+          summary: 'Live trend details are temporarily unavailable. Please retry shortly.',
+          opportunityScore: 0,
+          velocityGrowth: 0,
+          problemIntensity: 0,
+          discussionVolume: 0,
+          noveltyScore: 0,
+          status: 'EMERGING',
+          stage: 'early_signal',
+          firstDetected: now,
+          lastUpdated: now,
+          growthRate: 0,
+          momentum: 'stable',
+          keywords: [],
         },
       };
     }

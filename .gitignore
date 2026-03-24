@@ -79,3 +79,5 @@ docker-compose.override.yml
 # Misc
 *.pem
 .cache
+.vercel
+.env*.local
