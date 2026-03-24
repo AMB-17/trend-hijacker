@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { TrendFilters } from '@packages/types';
-import { apiClient, type Trend, type PaginatedResponse } from '../api/client';
+import { apiClient, type Trend } from '../api/client';
 
 interface UseTrendsOptions {
   autoFetch?: boolean;

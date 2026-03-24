@@ -1,14 +1,13 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useTrendById } from '@/lib/hooks';
-import { Card, CardBody, CardHeader, Button, Badge, Skeleton, StatusBadge, OpportunityScore, MomentumChart, VelocityIndicator } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Badge, StatusBadge, OpportunityScore, MomentumChart, VelocityIndicator } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TrendDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const trendId = params?.id as string;
 
   const { data: trend, loading, error, retry } = useTrendById(trendId);

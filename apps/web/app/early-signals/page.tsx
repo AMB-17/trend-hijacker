@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTrends } from '@/lib/hooks';
-import { Card, CardBody, Button, Input, Badge, SkeletonGrid } from '@/components/ui';
+import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import type { TrendFilters } from '@packages/types';
 import { Search } from 'lucide-react';
@@ -71,17 +71,19 @@ export default function EarlySignalsPage() {
             <p className="text-sm text-muted mb-2 font-medium">Sort By</p>
             <div className="flex gap-2 flex-wrap">
               {['score', 'date', 'velocity', 'volume'].map((sort) => (
-                <button
+                <Button
                   key={sort}
                   onClick={() => handleSortChange(sort)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  variant="outline"
+                  size="sm"
+                  className={
                     filters.sortBy === sort
-                      ? 'bg-primary text-white'
-                      : 'bg-card border border-border text-foreground hover:bg-card-hover'
-                  }`}
+                      ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                      : ''
+                  }
                 >
                   {sort.charAt(0).toUpperCase() + sort.slice(1)}
-                </button>
+                </Button>
               ))}
             </div>
           </div>

@@ -156,7 +156,7 @@ export class TrendService {
         return prisma.trend.findMany({
           where: {
             stage: "early_signal",
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             opportunityScore: { gte: 50 },
           },
           orderBy: {
@@ -234,7 +234,7 @@ export class TrendService {
       async () => {
         const trends = await prisma.trend.findMany({
           where: {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             firstDetected: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
             },

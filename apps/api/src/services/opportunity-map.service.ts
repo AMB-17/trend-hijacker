@@ -43,7 +43,7 @@ export class OpportunityMapService {
         // Get active trends
         const trends = await prisma.trend.findMany({
           where: {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             opportunityScore: { gte: 30 }, // Only significant trends
           },
           orderBy: {
@@ -170,7 +170,7 @@ export class OpportunityMapService {
       async () => {
         const trends = await prisma.trend.findMany({
           where: {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             problemIntensity: { gte: 0.5 }, // High pain
             velocityGrowth: { lt: 0.5 }, // Low competition
             opportunityScore: { gte: 40 },

@@ -18,10 +18,11 @@ export default async function trendsRoutes(app: FastifyInstance) {
     }
 
     const { stage, status, minScore, sortBy, limit, offset } = parsed.data;
+    const normalizedStatus = status === "VALIDATED" ? "ACTIVE" : status;
 
     const trends = await trendService.getTrends({
       stage,
-      status,
+      status: normalizedStatus,
       minScore,
       sortBy,
       limit,

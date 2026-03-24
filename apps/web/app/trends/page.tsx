@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useTrends } from '@/lib/hooks';
-import { Card, CardBody, Button, Input, Badge, SkeletonGrid } from '@/components/ui';
+import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import type { TrendFilters } from '@packages/types';
 import { Search } from 'lucide-react';
 
 const stages = ['early_signal', 'emerging', 'exploding'];
-const statuses = ['EMERGING', 'VALIDATED', 'DECLINING'];
+const statuses = ['EMERGING', 'ACTIVE', 'DECLINING'];
 
 export default function TrendsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -80,17 +80,19 @@ export default function TrendsPage() {
               <p className="text-sm text-muted mb-2 font-medium">Stage</p>
               <div className="flex flex-wrap gap-2">
                 {stages.map((stage) => (
-                  <button
+                  <Button
                     key={stage}
                     onClick={() => handleStageChange(stage)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    variant="outline"
+                    size="sm"
+                    className={
                       filters.stage === stage
-                        ? 'bg-primary text-white'
-                        : 'bg-card border border-border text-foreground hover:bg-card-hover'
-                    }`}
+                        ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                        : ''
+                    }
                   >
                     {stage.replaceAll('_', ' ')}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -100,17 +102,19 @@ export default function TrendsPage() {
               <p className="text-sm text-muted mb-2 font-medium">Status</p>
               <div className="flex flex-wrap gap-2">
                 {statuses.map((status) => (
-                  <button
+                  <Button
                     key={status}
                     onClick={() => handleStatusChange(status)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    variant="outline"
+                    size="sm"
+                    className={
                       filters.status === status
-                        ? 'bg-primary text-white'
-                        : 'bg-card border border-border text-foreground hover:bg-card-hover'
-                    }`}
+                        ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                        : ''
+                    }
                   >
                     {status}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -120,17 +124,19 @@ export default function TrendsPage() {
               <p className="text-sm text-muted mb-2 font-medium">Sort By</p>
               <div className="flex gap-2">
                 {['score', 'date', 'velocity', 'volume'].map((sort) => (
-                  <button
+                  <Button
                     key={sort}
                     onClick={() => handleSortChange(sort)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    variant="outline"
+                    size="sm"
+                    className={
                       filters.sortBy === sort
-                        ? 'bg-primary text-white'
-                        : 'bg-card border border-border text-foreground hover:bg-card-hover'
-                    }`}
+                        ? 'bg-primary text-white border-primary hover:bg-primary/90'
+                        : ''
+                    }
                   >
                     {sort}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>

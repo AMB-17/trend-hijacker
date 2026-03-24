@@ -27,7 +27,7 @@ export class SearchService {
         where: {
           AND: [
             {
-              status: { in: ["EMERGING", "VALIDATED"] },
+              status: { in: ["EMERGING", "ACTIVE"] },
             },
             {
               OR: [
@@ -171,7 +171,7 @@ export class SearchService {
         // Get recent trends and extract keywords that match
         const trends = await prisma.trend.findMany({
           where: {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             lastDetected: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },
@@ -226,7 +226,7 @@ export class SearchService {
       const where: any = {
         AND: [
           {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
           },
           {
             OR: [
@@ -317,7 +317,7 @@ export class SearchService {
         // Get most common keywords from recent trends
         const trends = await prisma.trend.findMany({
           where: {
-            status: { in: ["EMERGING", "VALIDATED"] },
+            status: { in: ["EMERGING", "ACTIVE"] },
             lastDetected: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },

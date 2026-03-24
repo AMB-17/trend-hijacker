@@ -1,7 +1,7 @@
 'use client';
 
 import { useEarlySignals, useExplodingTrends, useOpportunityMap } from '@/lib/hooks';
-import { Card, CardBody, CardHeader, SkeletonGrid, Skeleton, Button, Badge } from '@/components/ui';
+import { Card, CardBody, CardHeader, SkeletonGrid, Button, Badge } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import Link from 'next/link';
