@@ -181,7 +181,7 @@ export class TrendAggregator {
         select: { postId: true },
       });
 
-      const existingIds = new Set(existing.map((tp) => tp.postId));
+      const existingIds = new Set(existing.map((tp: any) => tp.postId));
 
       // Add only new posts
       const newPostIds = postIds.filter((id) => !existingIds.has(id));

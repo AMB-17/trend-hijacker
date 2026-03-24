@@ -20,7 +20,7 @@ const redisConnection = new IORedis({
 
 // Queue options
 const queueOptions: QueueOptions = {
-  connection: redisConnection,
+  connection: redisConnection as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -83,7 +83,7 @@ export async function processTrendDetection(job: Job) {
 
     if (dedupedPosts.length === 0) {
       // Mark all as processed even if filtered
-      await markPostsAsProcessed(posts.map((p) => p.id));
+      await markPostsAsProcessed(posts.map((p: any) => p.id));
       return { processed: posts.length, trendsCreated: 0 };
     }
 
@@ -104,7 +104,7 @@ export async function processTrendDetection(job: Job) {
     );
 
     if (trendingKeywords.length === 0) {
-      await markPostsAsProcessed(posts.map((p) => p.id));
+      await markPostsAsProcessed(posts.map((p: any) => p.id));
       return { processed: posts.length, trendsCreated: 0 };
     }
 
@@ -123,7 +123,7 @@ export async function processTrendDetection(job: Job) {
     );
 
     if (acceleratingKeywords.length === 0) {
-      await markPostsAsProcessed(posts.map((p) => p.id));
+      await markPostsAsProcessed(posts.map((p: any) => p.id));
       return { processed: posts.length, trendsCreated: 0 };
     }
 
@@ -177,7 +177,7 @@ export async function processTrendDetection(job: Job) {
     );
 
     // Step 9: Mark posts as processed
-    await markPostsAsProcessed(posts.map((p) => p.id));
+    await markPostsAsProcessed(posts.map((p: any) => p.id));
 
     return {
       processed: posts.length,

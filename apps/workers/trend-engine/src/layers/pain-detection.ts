@@ -282,11 +282,11 @@ export class PainDetectionLayer {
 
     // Calculate average intensity for each post
     const postsWithIntensity = posts
-      .map((post) => {
+      .map((post: any) => {
         const painPoints = post.painPoints.length;
         const avgIntensity =
           painPoints > 0
-            ? post.painPoints.reduce((sum, pp) => sum + pp.intensity, 0) /
+            ? post.painPoints.reduce((sum: number, pp: any) => sum + pp.intensity, 0) /
               painPoints
             : 0;
 
@@ -298,11 +298,11 @@ export class PainDetectionLayer {
           avgIntensity,
         };
       })
-      .filter((p) => p.painPoints > 0);
+      .filter((p: any) => p.painPoints > 0);
 
     // Sort by average intensity * pain point count (high pain + many pain points = top)
     return postsWithIntensity
-      .sort((a, b) => b.avgIntensity * b.painPoints - a.avgIntensity * a.painPoints)
+      .sort((a: any, b: any) => b.avgIntensity * b.painPoints - a.avgIntensity * a.painPoints)
       .slice(0, limit);
   }
 }

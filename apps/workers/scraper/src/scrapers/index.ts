@@ -1,6 +1,6 @@
-export { BaseScraper, ScraperConfig, ScrapedPost, ScrapeResult } from "./base.scraper";
-export { RedditScraper, RedditScrapeOptions } from "./reddit.scraper";
-export { HackerNewsScraper, HNScrapeOptions } from "./hackernews.scraper";
+export type { BaseScraper, ScraperConfig, ScrapedPost, ScrapeResult } from "./base.scraper";
+export type { RedditScraper, RedditScrapeOptions } from "./reddit.scraper";
+export type { HackerNewsScraper, HNScrapeOptions } from "./hackernews.scraper";
 
 import { BaseScraper } from "./base.scraper";
 import { RedditScraper } from "./reddit.scraper";

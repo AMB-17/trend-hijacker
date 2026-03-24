@@ -22,7 +22,7 @@ const redisConnection = new IORedis({
 
 // Queue options
 const queueOptions: QueueOptions = {
-  connection: redisConnection,
+  connection: redisConnection as any,
   defaultJobOptions: {
     attempts: 3, // Retry failed jobs 3 times
     backoff: {

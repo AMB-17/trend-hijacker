@@ -79,20 +79,3 @@ export function calculateStage(opportunityScore: number, growthRate: number): st
     return "mature";
   }
 }
-
-/**
- * Determine market potential based on score components
- */
-export function assessMarketPotential(
-  opportunityScore: number,
-  discussionVolume: number,
-  problemIntensity: number
-): "low" | "medium" | "high" {
-  if (opportunityScore >= 70 && problemIntensity >= 0.7) {
-    return "high";
-  } else if (opportunityScore >= 50 || (discussionVolume >= 0.6 && problemIntensity >= 0.6)) {
-    return "medium";
-  } else {
-    return "low";
-  }
-}

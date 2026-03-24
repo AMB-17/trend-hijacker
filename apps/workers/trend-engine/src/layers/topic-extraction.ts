@@ -104,7 +104,7 @@ export class TopicExtractionLayer {
       // Get primary topics (top 3-5)
       const primaryTopics = allTopics
         .slice(0, 5)
-        .map((t) => t.keyword)
+        .map((t: ExtractedTopic) => t.keyword)
         .filter((k) => k.length >= 3);
 
       // Filter out common tech words that aren't meaningful
