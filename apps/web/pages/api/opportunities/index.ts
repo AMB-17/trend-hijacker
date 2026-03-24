@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEMO_OPPORTUNITY_MAP } from '../_lib/demo-data'
+import { DEMO_OPPORTUNITY_MAP } from '../../../lib/demo-data'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {

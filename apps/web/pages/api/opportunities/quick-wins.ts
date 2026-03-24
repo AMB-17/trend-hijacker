@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEMO_QUICK_WINS } from '../_lib/demo-data'
+import { DEMO_QUICK_WINS } from '../../../lib/demo-data'
 
 function parseLimit(value: unknown, defaultValue: number): number {
   const raw = Array.isArray(value) ? value[0] : value

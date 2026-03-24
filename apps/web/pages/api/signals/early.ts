@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEMO_TRENDS_EARLY } from '../_lib/demo-data'
+import { DEMO_TRENDS_EARLY } from '../../../lib/demo-data'
 
 function parseLimit(value: unknown, defaultValue: number): number {
   const raw = Array.isArray(value) ? value[0] : value

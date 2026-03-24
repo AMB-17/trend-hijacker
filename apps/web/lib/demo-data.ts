@@ -235,20 +235,22 @@ export const DEMO_OPPORTUNITY_MAP = {
   },
 }
 
-export const DEMO_QUICK_WINS = DEMO_OPPORTUNITY_MAP.quadrants.quickWins
+export const DEMO_QUICK_WINS = DEMO_OPPORTUNITY_MAP.quadrants.quickWins;
 
 export const DEMO_INSIGHTS = {
   topQuickWin: DEMO_OPPORTUNITY_MAP.quadrants.quickWins[0] || null,
   topBigBet: DEMO_OPPORTUNITY_MAP.quadrants.bigBets[0] || null,
-  mostDiscussed: DEMO_OPPORTUNITY_MAP.items
-    .slice()
-    .sort((a, b) => b.discussionVolume - a.discussionVolume)[0] || null,
-  fastestGrowing: DEMO_OPPORTUNITY_MAP.items
-    .slice()
-    .sort((a, b) => b.velocityGrowth - a.velocityGrowth)[0] || null,
+  mostDiscussed:
+    DEMO_OPPORTUNITY_MAP.items
+      .slice()
+      .sort((a, b) => b.discussionVolume - a.discussionVolume)[0] || null,
+  fastestGrowing:
+    DEMO_OPPORTUNITY_MAP.items
+      .slice()
+      .sort((a, b) => b.velocityGrowth - a.velocityGrowth)[0] || null,
   recommendations: [
     'Ship a narrow MVP in the quick-win segment to validate pricing fast.',
     'Prioritize opportunities where pain intensity exceeds 70%.',
     'Use weekly velocity tracking to catch breakout demand early.',
   ],
-}
+};

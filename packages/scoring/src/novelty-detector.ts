@@ -56,7 +56,8 @@ export function calculateFreshnessScore(
 
   const ratio = recentMentions / totalMentions;
 
-  // If more than 30% of mentions are recent, it's fresh  return Math.min(1, ratio * 3);
+  // If more than 30% of mentions are recent, it's fresh.
+  return Math.min(1, ratio * 3);
 }
 
 /**

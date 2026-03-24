@@ -61,7 +61,17 @@ export function createTestApp(): FastifyInstance {
 /**
  * Create a mock Redis client for testing
  */
-export function mockRedisClient() {
+export function mockRedisClient(): {
+  get: ReturnType<typeof vi.fn>;
+  set: ReturnType<typeof vi.fn>;
+  del: ReturnType<typeof vi.fn>;
+  exists: ReturnType<typeof vi.fn>;
+  keys: ReturnType<typeof vi.fn>;
+  expire: ReturnType<typeof vi.fn>;
+  ttl: ReturnType<typeof vi.fn>;
+  flushall: ReturnType<typeof vi.fn>;
+  quit: ReturnType<typeof vi.fn>;
+} {
   return {
     get: vi.fn(),
     set: vi.fn(),

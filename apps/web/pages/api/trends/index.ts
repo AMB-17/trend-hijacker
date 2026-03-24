@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEMO_TRENDS_EARLY, DEMO_TRENDS_EXPLODING } from '../_lib/demo-data'
+import { DEMO_TRENDS_EARLY, DEMO_TRENDS_EXPLODING } from '../../../lib/demo-data'
 
 type TrendRecord = {
   id: string

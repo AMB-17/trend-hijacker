@@ -29,16 +29,20 @@ export function parsePaginationParams(query: Record<string, unknown>): {
   limit: number;
   offset: number;
 } {
+  const limitValue = toStringValue(query.limit);
+  const offsetValue = toStringValue(query.offset);
+  const pageValue = toStringValue(query.page);
+
   const limit = Math.min(
-    Math.max(parseInt(query.limit) || 20, 1),
+    Math.max(parseInt(limitValue ?? "20", 10) || 20, 1),
     100 // Max 100 items per page
   );
 
-  let offset = Math.max(parseInt(query.offset) || 0, 0);
+  let offset = Math.max(parseInt(offsetValue ?? "0", 10) || 0, 0);
 
   // Support page-based pagination
-  if (query.page) {
-    const page = Math.max(parseInt(query.page) || 1, 1);
+  if (pageValue) {
+    const page = Math.max(parseInt(pageValue, 10) || 1, 1);
     offset = (page - 1) * limit;
   }
 
@@ -98,12 +102,13 @@ export function parseCursorParams(query: Record<string, unknown>): {
   limit: number;
   cursor?: string;
 } {
+  const limitValue = toStringValue(query.limit);
   const limit = Math.min(
-    Math.max(parseInt(query.limit) || 20, 1),
+    Math.max(parseInt(limitValue ?? "20", 10) || 20, 1),
     100
   );
 
-  const cursor = query.cursor || undefined;
+  const cursor = toStringValue(query.cursor);
 
   return { limit, cursor };
 }
@@ -148,15 +153,15 @@ export function parseSortParams(
   allowedFields: string[] = [],
   defaultField: string = "createdAt"
 ): SortParams {
-  let sortBy = query.sortBy || defaultField;
+  let sortBy = toStringValue(query.sortBy) ?? defaultField;
 
   // Validate sortBy field
   if (allowedFields.length > 0 && !allowedFields.includes(sortBy)) {
     sortBy = defaultField;
   }
 
-  const sortOrder =
-    query.sortOrder?.toLowerCase() === "asc" ? "asc" : "desc";
+  const rawSortOrder = toStringValue(query.sortOrder)?.toLowerCase();
+  const sortOrder = rawSortOrder === "asc" ? "asc" : "desc";
 
   return { sortBy, sortOrder };
 }
@@ -214,13 +219,15 @@ export function parseNumericRange(
 
   const min = query[`${prefix}Min`] || query[`min${capitalize(prefix)}`];
   const max = query[`${prefix}Max`] || query[`max${capitalize(prefix)}`];
+  const minValue = toStringValue(min);
+  const maxValue = toStringValue(max);
 
-  if (min !== undefined) {
-    range.min = parseFloat(min);
+  if (minValue !== undefined) {
+    range.min = parseFloat(minValue);
   }
 
-  if (max !== undefined) {
-    range.max = parseFloat(max);
+  if (maxValue !== undefined) {
+    range.max = parseFloat(maxValue);
   }
 
   return range;
@@ -245,13 +252,15 @@ export function parseDateRange(
 
   const from = query[`${prefix}From`] || query.from;
   const to = query[`${prefix}To`] || query.to;
+  const fromValue = toDateInput(from);
+  const toValue = toDateInput(to);
 
-  if (from) {
-    range.from = new Date(from);
+  if (fromValue !== undefined) {
+    range.from = new Date(fromValue);
   }
 
-  if (to) {
-    range.to = new Date(to);
+  if (toValue !== undefined) {
+    range.to = new Date(toValue);
   }
 
   return range;
@@ -262,4 +271,17 @@ export function parseDateRange(
  */
 function capitalize(str: string): string {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function toStringValue(value: unknown): string | undefined {
+  if (typeof value === "string") return value;
+  if (typeof value === "number") return String(value);
+  return undefined;
+}
+
+function toDateInput(value: unknown): string | number | Date | undefined {
+  if (typeof value === "string" || typeof value === "number" || value instanceof Date) {
+    return value;
+  }
+  return undefined;
 }
