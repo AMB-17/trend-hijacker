@@ -97,7 +97,8 @@ LOG_LEVEL=info
 CORS_ORIGIN=https://example.com
 
 # Frontend
-NEXT_PUBLIC_API_URL=https://api.example.com
+NEXT_PUBLIC_API_URL=/api/proxy
+API_URL=https://api.example.com
 NEXT_PUBLIC_ENV=production
 
 # Security

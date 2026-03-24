@@ -1,5 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+function normalizeApiUrl(value?: string): string {
+  const candidate = value?.trim()
+  if (!candidate) {
+    return ''
+  }
+
+  // Ignore relative proxy values (for example /api/proxy) for server-side upstream fetches.
+  if (candidate.startsWith('/')) {
+    return ''
+  }
+
+  try {
+    const url = new URL(candidate)
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return ''
+  }
+}
+
 function getOrigin(req: NextApiRequest): string {
   const host = req.headers.host
   const forwardedProto = req.headers['x-forwarded-proto']
@@ -65,8 +84,10 @@ async function proxyFetch(targetUrl: string, req: NextApiRequest, res: NextApiRe
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const configuredApiUrl = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL
-  const apiUrl = (configuredApiUrl || (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '')).replace(/\/$/, '')
+  const apiUrl =
+    normalizeApiUrl(process.env.API_URL) ||
+    normalizeApiUrl(process.env.NEXT_PUBLIC_API_URL) ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : '')
 
   const pathParts = Array.isArray(req.query.path) ? req.query.path : []
   if (pathParts.length === 0) {
