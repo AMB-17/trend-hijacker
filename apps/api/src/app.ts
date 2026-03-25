@@ -4,7 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import websocket from "@fastify/websocket";
 import { logger } from "@packages/utils";
-import { openaiService } from "./services/openai.service";
+import { nlpService } from "./services/nlp.service";
 
 // Routes
 import trendsRoutes from "./routes/trends";
@@ -20,9 +20,12 @@ import workspacesRoutes from "./routes/workspaces";
 import collectionsRoutes from "./routes/collections";
 import { trendAnalyticsRoutes } from "./routes/analytics";
 import authRoutes from "./routes/auth";
+import adminRoutes from "./routes/admin";
+import userDataRoutes from "./routes/user-data";
 
 // Middleware
 import { errorHandler } from "./middleware/error-handler";
+import { auditMiddleware } from "./middleware/audit";
 
 export async function buildApp() {
   const app = Fastify({
@@ -30,8 +33,8 @@ export async function buildApp() {
     bodyLimit: 1048576, // 1MB request body limit
   });
 
-  // Initialize OpenAI service
-  openaiService.initialize();
+  // Initialize NLP service (free, local-only)
+  nlpService;
 
   // Register plugins
 
@@ -81,6 +84,9 @@ export async function buildApp() {
 
   await app.register(websocket);
 
+  // Register audit middleware for all routes
+  app.addHook('preHandler', auditMiddleware);
+
   // Health check
   app.get("/health", async () => {
     return { status: "ok", timestamp: new Date().toISOString() };
@@ -102,6 +108,12 @@ export async function buildApp() {
   await app.register(workspacesRoutes, { prefix: "/api/workspaces" });
   await app.register(collectionsRoutes, { prefix: "/api/collections" });
   await app.register(trendAnalyticsRoutes, { prefix: "/api" });
+
+  // Admin routes
+  await app.register(adminRoutes, { prefix: "/api/admin" });
+
+  // User data routes (GDPR compliance)
+  await app.register(userDataRoutes, { prefix: "/api/user" });
 
   // Error handler
   app.setErrorHandler(errorHandler);

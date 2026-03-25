@@ -1,8 +1,7 @@
 import { prisma } from '@packages/database';
-import { openaiService } from './openai.service';
+import { nlpService } from './nlp.service';
 import { cacheService } from './cache.service';
 import { logger } from '../utils/logger';
-import OpenAI from '@openai/sdk';
 
 interface GeneratedIdeaData {
   name: string;
@@ -41,13 +40,13 @@ class IdeaGenerationService {
       return cachedIdeas;
     }
 
-    if (!openaiService.isInitialized()) {
-      logger.warn('OpenAI not initialized, returning fallback ideas');
+    if (!nlpService.isInitialized()) {
+      logger.warn('NLP service not ready - using fallback ideas');
       return this.getFallbackIdeas(numberOfIdeas);
     }
 
     try {
-      const ideas = await this.callOpenAIForIdeas(
+      const ideas = await this.callNLPForIdeas(
         numberOfIdeas,
         trendTitle,
         trendSummary
@@ -71,39 +70,19 @@ class IdeaGenerationService {
     }
   }
 
-  private async callOpenAIForIdeas(
+  private async callNLPForIdeas(
     numberOfIdeas: number,
     trendTitle: string,
     trendSummary: string
   ): Promise<GeneratedIdeaData[]> {
-    const prompt = `You are a startup advisor and market analyst. Based on the following trend, generate ${numberOfIdeas} innovative startup ideas.
-
-Trend: "${trendTitle}"
-Description: "${trendSummary}"
-
-For each idea, provide:
-1. A catchy startup name
-2. A brief description (2-3 sentences)
-3. Target market segment
-4. Difficulty score (1-10, where 1 is very easy and 10 is extremely hard to execute)
-
-Return a JSON array with objects containing: name, description, targetMarket, difficultScore
-
-Make sure the ideas are practical, achievable, and directly related to the trend.`;
-
-    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-      {
-        role: 'user',
-        content: prompt,
-      },
-    ];
+    const prompt = `Based on the trend "${trendTitle}" about "${trendSummary}", generate ${numberOfIdeas} startup ideas.`;
 
     interface IdeasResponse {
       ideas: GeneratedIdeaData[];
     }
 
-    const response = await openaiService.generateStructuredCompletion<IdeasResponse>(
-      messages,
+    const response = await nlpService.generateStructuredCompletion<IdeasResponse>(
+      [{ role: 'user', content: prompt }] as any,
       {
         ideas: {
           type: 'array',

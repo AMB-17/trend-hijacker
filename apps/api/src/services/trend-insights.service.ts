@@ -1,8 +1,7 @@
 import { prisma } from '@packages/database';
-import { openaiService } from './openai.service';
+import { nlpService } from './nlp.service';
 import { cacheService } from './cache.service';
 import { logger } from '../utils/logger';
-import OpenAI from '@openai/sdk';
 
 interface TrendInsightData {
   summary: string;
@@ -42,8 +41,8 @@ class TrendInsightsService {
       return cachedInsights;
     }
 
-    if (!openaiService.isInitialized()) {
-      logger.warn('OpenAI not initialized, returning fallback insights');
+    if (!nlpService.isInitialized()) {
+      logger.warn('NLP not ready - using fallback insights');
       return this.getFallbackInsights(trendData.title);
     }
 
