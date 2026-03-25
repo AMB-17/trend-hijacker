@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import internalRoutes from './internal';
+import { ApiErrorResponseSchema } from '@packages/types';
 
 vi.mock('../services/batch-ingestion.service', () => ({
   runIngestionBatch: vi.fn().mockResolvedValue({ ingested: 3 }),
@@ -41,7 +42,11 @@ describe('internal cron routes security', () => {
     });
 
     expect(response.statusCode).toBe(401);
-    expect(response.json()).toMatchObject({ success: false });
+    const body = ApiErrorResponseSchema.parse(response.json());
+    expect(body.error.code).toBe('UNAUTHORIZED');
+    expect(body.error.message).toBe('Unauthorized');
+    expect(body.error.timestamp).toBeTruthy();
+    expect(body.error.traceId).toBeTruthy();
 
     await app.close();
   });
@@ -71,10 +76,9 @@ describe('internal cron routes security', () => {
 
     expect(first.statusCode).toBe(200);
     expect(second.statusCode).toBe(409);
-    expect(second.json()).toMatchObject({
-      success: false,
-      error: { message: 'Duplicate idempotency key' },
-    });
+    const secondBody = ApiErrorResponseSchema.parse(second.json());
+    expect(secondBody.error.message).toBe('Duplicate idempotency key');
+    expect(secondBody.error.code).toBe('CRON_REQUEST_REJECTED');
 
     await app.close();
   });

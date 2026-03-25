@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import alertsRoutes from "./alerts";
+import { ApiErrorResponseSchema } from "@packages/types";
 
 vi.mock("../services/alert.service", () => ({
   alertService: {
@@ -23,6 +24,9 @@ describe("alerts routes", () => {
 
     const response = await app.inject({ method: "GET", url: "/api/alerts" });
     expect(response.statusCode).toBe(400);
+    const body = ApiErrorResponseSchema.parse(response.json());
+    expect(body.error.code).toBe("INVALID_QUERY_PARAMETERS");
+    expect(body.error.timestamp).toBeTruthy();
 
     await app.close();
   });

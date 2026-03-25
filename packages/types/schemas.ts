@@ -186,6 +186,28 @@ export const SearchSuggestionsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(10),
 });
 
+export const ApiMetaSchema = z.record(z.unknown());
+
+export const ApiErrorSchema = z.object({
+  code: z.string().min(1),
+  message: z.string().min(1),
+  details: z.unknown().optional(),
+  timestamp: z.string().datetime(),
+  traceId: z.string().min(1).optional(),
+});
+
+export const ApiErrorResponseSchema = z.object({
+  success: z.literal(false),
+  error: ApiErrorSchema,
+});
+
+export const createApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    success: z.literal(true),
+    data: dataSchema,
+    meta: ApiMetaSchema.optional(),
+  });
+
 export type User = z.infer<typeof UserSchema>;
 export type Trend = z.infer<typeof TrendSchema>;
 export type Discussion = z.infer<typeof DiscussionSchema>;
@@ -200,3 +222,4 @@ export type UpsertUserPreferencesInput = z.infer<typeof UpsertUserPreferencesInp
 export type AlertRule = z.infer<typeof AlertRuleSchema>;
 export type CreateAlertInput = z.infer<typeof CreateAlertInputSchema>;
 export type UpdateAlertInput = z.infer<typeof UpdateAlertInputSchema>;
+export type ApiErrorPayload = z.infer<typeof ApiErrorSchema>;

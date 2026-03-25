@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import usersRoutes from "./users";
+import { ApiErrorResponseSchema, UserPreferencesSchema, createApiSuccessResponseSchema } from "@packages/types";
 
 vi.mock("../services/user-preference.service", () => ({
   userPreferenceService: {
@@ -32,10 +33,11 @@ describe("users preferences routes", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchObject({
-      success: false,
-      error: { message: "Invalid query parameters" },
-    });
+    const body = ApiErrorResponseSchema.parse(response.json());
+    expect(body.error.message).toBe("Invalid query parameters");
+    expect(body.error.code).toBe("INVALID_QUERY_PARAMETERS");
+    expect(body.error.timestamp).toBeTruthy();
+    expect(body.error.traceId).toBeTruthy();
 
     await app.close();
   });
@@ -50,13 +52,11 @@ describe("users preferences routes", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toMatchObject({
-      success: true,
-      data: {
-        preferredStages: ["early_signal"],
-        minOpportunityScore: 55,
-        digestCadence: "daily",
-      },
+    const body = createApiSuccessResponseSchema(UserPreferencesSchema).parse(response.json());
+    expect(body.data).toMatchObject({
+      preferredStages: ["early_signal"],
+      minOpportunityScore: 55,
+      digestCadence: "daily",
     });
 
     await app.close();

@@ -15,10 +15,6 @@ export function TrendCard({ trend, userId, alertMatchCount = 0 }: TrendCardProps
   const [isSaved, setIsSaved] = useState(Boolean(trend.isSaved));
   const [saving, setSaving] = useState(false);
 
-  const mainSourceUrl =
-    trend?.posts?.find((entry: any) => entry?.url || entry?.post?.url)?.url ||
-    trend?.posts?.find((entry: any) => entry?.url || entry?.post?.url)?.post?.url;
-
   const toggleSaved = async () => {
     if (!userId || saving) {
       return;
@@ -100,23 +96,12 @@ export function TrendCard({ trend, userId, alertMatchCount = 0 }: TrendCardProps
         )}
 
         {/* CTA Buttons */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Link href={`/trends/${trend.id}`}>
             <Button size="sm" className="w-full">
               View Details →
             </Button>
           </Link>
-          {mainSourceUrl ? (
-            <a href={mainSourceUrl} target="_blank" rel="noopener noreferrer">
-              <Button size="sm" variant="secondary" className="w-full">
-                Main Source
-              </Button>
-            </a>
-          ) : (
-            <Button size="sm" variant="secondary" className="w-full" disabled>
-              Main Source
-            </Button>
-          )}
           {userId ? (
             <Button size="sm" variant="outline" className="w-full" onClick={toggleSaved} isLoading={saving}>
               {isSaved ? 'Unsave' : 'Save'}

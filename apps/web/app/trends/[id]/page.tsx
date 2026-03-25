@@ -15,6 +15,7 @@ export default function TrendDetailPage() {
   const trendId = params?.id as string;
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copiedSourceUrl, setCopiedSourceUrl] = useState<string | null>(null);
 
   const { data: trend, loading, error, retry } = useTrendById(trendId);
 
@@ -119,6 +120,18 @@ export default function TrendDetailPage() {
   const uniqueSourceLinks = Array.from(new Map(sourceLinks.map(item => [item.url, item])).values());
   const mainSource = uniqueSourceLinks[0];
 
+  const copySourceUrl = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedSourceUrl(url);
+      setTimeout(() => {
+        setCopiedSourceUrl(current => (current === url ? null : current));
+      }, 1800);
+    } catch {
+      setCopiedSourceUrl(null);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-8">
       {/* Back Button */}
@@ -156,17 +169,6 @@ export default function TrendDetailPage() {
                 <Button size="sm" variant="outline" onClick={toggleSaved} isLoading={saving} className="w-full">
                   {isSaved ? 'Unsave Trend' : 'Save Trend'}
                 </Button>
-                {mainSource ? (
-                  <a href={mainSource.url} target="_blank" rel="noopener noreferrer" className="w-full">
-                    <Button size="sm" variant="secondary" className="w-full">
-                      Open Main Source
-                    </Button>
-                  </a>
-                ) : (
-                  <Button size="sm" variant="secondary" className="w-full" disabled>
-                    Open Main Source
-                  </Button>
-                )}
               </div>
             </div>
           </div>
@@ -176,21 +178,43 @@ export default function TrendDetailPage() {
       {uniqueSourceLinks.length > 0 && (
         <Card>
           <CardHeader>
-            <h3 className="font-semibold text-foreground">Source Links</h3>
-            <p className="text-sm text-muted mt-1">Primary websites or repositories where this trend was detected</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-foreground">Source Links</h3>
+                <p className="text-sm text-muted mt-1">Primary websites or repositories where this trend was detected</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="default">{uniqueSourceLinks.length} sources</Badge>
+                {mainSource ? (
+                  <a href={mainSource.url} target="_blank" rel="noopener noreferrer">
+                    <Button size="sm" variant="secondary">Open Main Source</Button>
+                  </a>
+                ) : (
+                  <Button size="sm" variant="secondary" disabled>
+                    Open Main Source
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardBody className="space-y-3">
             {uniqueSourceLinks.slice(0, 5).map((item) => (
-              <a
-                key={item.url}
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block p-3 rounded-lg border border-border bg-card/40 hover:bg-card transition-colors"
-              >
-                <p className="font-medium text-foreground line-clamp-1">{item.title}</p>
-                <p className="text-xs text-muted mt-1">Source: {item.sourceName}</p>
-              </a>
+              <div key={item.url} className="p-3 rounded-lg border border-border bg-card/40">
+                <div className="flex items-start justify-between gap-3">
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 hover:underline">
+                    <p className="font-medium text-foreground line-clamp-1">{item.title}</p>
+                    <p className="text-xs text-muted mt-1">Source: {item.sourceName}</p>
+                  </a>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copySourceUrl(item.url)}
+                    className="shrink-0"
+                  >
+                    {copiedSourceUrl === item.url ? 'Copied' : 'Copy Link'}
+                  </Button>
+                </div>
+              </div>
             ))}
           </CardBody>
         </Card>

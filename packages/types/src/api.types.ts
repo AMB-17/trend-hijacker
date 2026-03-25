@@ -1,18 +1,29 @@
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: {
-    message: string;
-    code?: string;
-    details?: unknown;
-  };
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
+  timestamp?: string;
+  traceId?: string;
+}
+
+export interface ApiSuccessResponse<T = unknown> {
+  success: true;
+  data: T;
   meta?: {
     page?: number;
     limit?: number;
     total?: number;
     hasMore?: boolean;
+    [key: string]: unknown;
   };
 }
+
+export interface ApiErrorResponse {
+  success: false;
+  error: ApiError;
+}
+
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 export interface PaginationParams {
   page?: number;
