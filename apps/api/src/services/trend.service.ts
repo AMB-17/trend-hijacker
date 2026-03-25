@@ -147,7 +147,7 @@ export class TrendService {
   /**
    * Get early signals (early_signal stage, high opportunity score)
    */
-  async getEarlySignals(limit: number = 20) {
+  async getEarlySignals(limit: number = 20): Promise<unknown[]> {
     const cacheKey = "trends:early-signals:" + limit;
 
     return cacheService.getOrSet(
@@ -187,7 +187,7 @@ export class TrendService {
   /**
    * Get exploding trends (high velocity, high volume)
    */
-  async getExplodingTrends(limit: number = 20) {
+  async getExplodingTrends(limit: number = 20): Promise<unknown[]> {
     const cacheKey = "trends:exploding:" + limit;
 
     return cacheService.getOrSet(
@@ -280,11 +280,75 @@ export class TrendService {
   }
 
   /**
+   * Get personalized trends for a user by prioritizing saved trends.
+   */
+  async getTrendsForUser(userId: string, filters: TrendFilters) {
+    const { stage, status, minScore, sortBy, limit, offset } = filters;
+    const cacheKey = CacheService.personalizedTrendKey(userId, {
+      stage,
+      status,
+      minScore,
+      sortBy,
+      limit,
+      offset,
+    });
+
+    const cached = await cacheService.get<any>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const [saved, user] = await Promise.all([
+      prisma.savedTrend.findMany({
+        where: { userId },
+        select: { trendId: true },
+      }),
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { preferences: true },
+      }),
+    ]);
+
+    const preferences = (user?.preferences ?? null) as {
+      preferredStages?: string[];
+      minOpportunityScore?: number;
+    } | null;
+
+    const effectiveStage = stage ?? (preferences?.preferredStages && preferences.preferredStages.length === 1 ? preferences.preferredStages[0] : undefined);
+    const effectiveMinScore = minScore ?? preferences?.minOpportunityScore;
+
+    const trends = await this.getTrends({
+      ...filters,
+      stage: effectiveStage,
+      minScore: effectiveMinScore,
+    });
+
+    const savedSet = new Set(saved.map((item: { trendId: string }) => item.trendId));
+    const withSavedFlag = trends.data.map((trend: any) => ({
+      ...trend,
+      isSaved: savedSet.has(trend.id),
+    }));
+
+    // Keep existing sort, but push saved trends to top as a personalization boost.
+    withSavedFlag.sort((a: { isSaved?: boolean }, b: { isSaved?: boolean }) => Number(Boolean(b.isSaved)) - Number(Boolean(a.isSaved)));
+
+    const result = {
+      ...trends,
+      data: withSavedFlag,
+    };
+
+    await cacheService.set(cacheKey, result, 180);
+
+    return result;
+  }
+
+  /**
    * Invalidate cache for trends
    */
   async invalidateCache() {
     await cacheService.deletePattern("trends:*");
     await cacheService.deletePattern("trend:*");
+    await cacheService.deletePattern("user:*:trends:*");
     logger.info("[TrendService] Cache invalidated");
   }
 }

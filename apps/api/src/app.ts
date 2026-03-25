@@ -12,6 +12,7 @@ import opportunitiesRoutes from "./routes/opportunities";
 import searchRoutes from "./routes/search";
 import sourcesRoutes from "./routes/sources";
 import internalRoutes from "./routes/internal";
+import usersRoutes from "./routes/users";
 
 // Middleware
 import { errorHandler } from "./middleware/error-handler";
@@ -82,6 +83,7 @@ export async function buildApp() {
   await app.register(searchRoutes, { prefix: "/api/search" });
   await app.register(sourcesRoutes, { prefix: "/api/sources" });
   await app.register(internalRoutes, { prefix: "/api/internal" });
+  await app.register(usersRoutes, { prefix: "/api/users" });
 
   // Error handler
   app.setErrorHandler(errorHandler);

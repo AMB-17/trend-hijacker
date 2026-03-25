@@ -95,6 +95,41 @@ export const TrendsListQuerySchema = z.object({
   sortBy: z.enum(["score", "date", "velocity", "volume"]).default("score"),
   limit: z.coerce.number().int().min(1).max(200).default(20),
   offset: z.coerce.number().int().min(0).max(10_000).default(0),
+  userId: z.string().min(1).max(128).optional(),
+});
+
+export const SavedTrendsQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
+  offset: z.coerce.number().int().min(0).max(10_000).default(0),
+});
+
+export const SaveTrendInputSchema = z.object({
+  userId: z.string().min(1).max(128),
+  trendId: z.string().min(1).max(128),
+});
+
+export const UserPreferencesSchema = z.object({
+  preferredStages: z.array(z.string().min(1).max(64)).max(10).default([]),
+  minOpportunityScore: z.number().min(0).max(100).default(0),
+  digestCadence: z.enum(["off", "daily", "weekly"]).default("off"),
+});
+
+export const UserPreferencesQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
+});
+
+export const UpsertUserPreferencesInputSchema = z.object({
+  userId: z.string().min(1).max(128),
+  preferences: UserPreferencesSchema,
+});
+
+export const RemoveSavedTrendParamsSchema = z.object({
+  trendId: z.string().min(1).max(128),
+});
+
+export const RemoveSavedTrendQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
 });
 
 export const SearchQuerySchema = z.object({
@@ -114,3 +149,7 @@ export type PainPoint = z.infer<typeof PainPointSchema>;
 export type OpportunityIdea = z.infer<typeof OpportunityIdeaSchema>;
 export type CreateTrendInput = z.infer<typeof CreateTrendInputSchema>;
 export type CursorPagination = z.infer<typeof CursorPaginationSchema>;
+export type SavedTrendsQuery = z.infer<typeof SavedTrendsQuerySchema>;
+export type SaveTrendInput = z.infer<typeof SaveTrendInputSchema>;
+export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
+export type UpsertUserPreferencesInput = z.infer<typeof UpsertUserPreferencesInputSchema>;

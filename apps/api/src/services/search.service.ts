@@ -172,7 +172,7 @@ export class SearchService {
         const trends = await prisma.trend.findMany({
           where: {
             status: { in: ["EMERGING", "ACTIVE"] },
-            lastDetected: {
+            lastUpdated: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },
           },
@@ -213,7 +213,7 @@ export class SearchService {
     dateFrom?: Date;
     dateTo?: Date;
     limit?: number;
-  }) {
+  }): Promise<unknown[]> {
     const { query, stage, minScore, dateFrom, dateTo, limit = 20 } = params;
 
     if (!query || query.trim().length < 2) {
@@ -265,7 +265,7 @@ export class SearchService {
         const dateFilter: any = {};
         if (dateFrom) dateFilter.gte = dateFrom;
         if (dateTo) dateFilter.lte = dateTo;
-        where.AND.push({ lastDetected: dateFilter });
+        where.AND.push({ lastUpdated: dateFilter });
       }
 
       const results = await prisma.trend.findMany({
@@ -318,7 +318,7 @@ export class SearchService {
         const trends = await prisma.trend.findMany({
           where: {
             status: { in: ["EMERGING", "ACTIVE"] },
-            lastDetected: {
+            lastUpdated: {
               gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },
           },

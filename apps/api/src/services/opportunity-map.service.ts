@@ -52,7 +52,7 @@ export class OpportunityMapService {
           take: 100, // Top 100 trends
           include: {
             posts: {
-              select: { id: true },
+              select: { postId: true },
             },
           },
         });
@@ -181,7 +181,7 @@ export class OpportunityMapService {
           take: limit,
           include: {
             posts: {
-              select: { id: true },
+              select: { postId: true },
             },
           },
         });

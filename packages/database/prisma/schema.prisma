@@ -15,6 +15,7 @@ model User {
   email        String   @unique
   passwordHash String?
   name         String?
+  preferences  Json?
   tier         Tier     @default(FREE)
   stripeId     String?  @unique
   createdAt    DateTime @default(now())

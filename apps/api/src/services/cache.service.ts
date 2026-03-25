@@ -247,6 +247,23 @@ export class CacheService {
   static trendByIdKey(id: string): string {
     return `trend:${id}`;
   }
+
+  /**
+   * Generate cache key for personalized trend feeds
+   */
+  static personalizedTrendKey(
+    userId: string,
+    params: {
+      stage?: string;
+      status?: string;
+      minScore?: number;
+      sortBy?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ): string {
+    return `user:${userId}:${CacheService.trendKey(params)}`;
+  }
 }
 
 // Export singleton instance
