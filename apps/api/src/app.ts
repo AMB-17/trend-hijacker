@@ -19,6 +19,7 @@ import alertConfigRoutes from "./routes/alert-config";
 import workspacesRoutes from "./routes/workspaces";
 import collectionsRoutes from "./routes/collections";
 import { trendAnalyticsRoutes } from "./routes/analytics";
+import authRoutes from "./routes/auth";
 
 // Middleware
 import { errorHandler } from "./middleware/error-handler";
@@ -84,6 +85,9 @@ export async function buildApp() {
   app.get("/health", async () => {
     return { status: "ok", timestamp: new Date().toISOString() };
   });
+
+  // Auth routes (register first for security middleware)
+  await app.register(authRoutes, { prefix: "/api/auth" });
 
   // API routes
   await app.register(trendsRoutes, { prefix: "/api/trends" });

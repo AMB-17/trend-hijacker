@@ -16,6 +16,7 @@ export default function TrendDetailPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copiedSourceUrl, setCopiedSourceUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeseries' | 'sentiment' | 'insights' | 'reports'>('overview');
 
   const { data: trend, loading, error, retry } = useTrendById(trendId);
 
