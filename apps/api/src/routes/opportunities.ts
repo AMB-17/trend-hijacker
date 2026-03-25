@@ -1,16 +1,14 @@
 import { FastifyInstance } from "fastify";
 import { LimitQuerySchema } from "@packages/types";
 import { opportunityMapService } from "../services/opportunity-map.service";
+import { errorResponse, successResponse } from "../utils/api-response";
 
 export default async function opportunitiesRoutes(app: FastifyInstance) {
   // GET /api/opportunities - Get opportunity map data
   app.get("/", async (request, reply) => {
     const mapData = await opportunityMapService.getOpportunityMap();
 
-    return {
-      success: true,
-      data: mapData,
-    };
+    return successResponse(mapData);
   });
 
   // GET /api/opportunities/quick-wins - Get quick wins
@@ -18,30 +16,18 @@ export default async function opportunitiesRoutes(app: FastifyInstance) {
     const parsed = LimitQuerySchema.safeParse(request.query ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid query parameters",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid query parameters", "INVALID_QUERY_PARAMETERS", parsed.error.flatten());
     }
 
     const quickWins = await opportunityMapService.getQuickWins(parsed.data.limit);
 
-    return {
-      success: true,
-      data: quickWins,
-    };
+    return successResponse(quickWins);
   });
 
   // GET /api/opportunities/insights - Get opportunity insights
   app.get("/insights", async (request, reply) => {
     const insights = await opportunityMapService.getOpportunityInsights();
 
-    return {
-      success: true,
-      data: insights,
-    };
+    return successResponse(insights);
   });
 }

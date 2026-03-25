@@ -9,6 +9,7 @@ import {
 } from "@packages/types";
 import { trendService } from "../services/trend.service";
 import { savedTrendService } from "../services/saved-trend.service";
+import { errorResponse, successResponse } from "../utils/api-response";
 
 export default async function trendsRoutes(app: FastifyInstance) {
   // GET /api/trends - List all trends
@@ -16,13 +17,7 @@ export default async function trendsRoutes(app: FastifyInstance) {
     const parsed = TrendsListQuerySchema.safeParse(request.query ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid query parameters",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid query parameters", "INVALID_QUERY_PARAMETERS", parsed.error.flatten());
     }
 
     const { stage, status, minScore, sortBy, limit, offset, userId } = parsed.data;
@@ -46,16 +41,12 @@ export default async function trendsRoutes(app: FastifyInstance) {
           offset,
         });
 
-    return {
-      success: true,
-      data: trends.data,
-      meta: {
+    return successResponse(trends.data, {
         total: trends.total,
         limit,
         offset,
         hasMore: trends.hasMore,
-      },
-    };
+      });
   });
 
   // GET /api/trends/saved - List saved trends for a user
@@ -63,28 +54,18 @@ export default async function trendsRoutes(app: FastifyInstance) {
     const parsed = SavedTrendsQuerySchema.safeParse(request.query ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid query parameters",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid query parameters", "INVALID_QUERY_PARAMETERS", parsed.error.flatten());
     }
 
     const { userId, limit, offset } = parsed.data;
     const result = await savedTrendService.listSavedTrends(userId, limit, offset);
 
-    return {
-      success: true,
-      data: result.data,
-      meta: {
+    return successResponse(result.data, {
         total: result.total,
         limit,
         offset,
         hasMore: result.hasMore,
-      },
-    };
+      });
   });
 
   // POST /api/trends/saved - Save a trend for a user
@@ -92,13 +73,7 @@ export default async function trendsRoutes(app: FastifyInstance) {
     const parsed = SaveTrendInputSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid request body",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid request body", "INVALID_REQUEST_BODY", parsed.error.flatten());
     }
 
     const { userId, trendId } = parsed.data;
@@ -106,22 +81,14 @@ export default async function trendsRoutes(app: FastifyInstance) {
 
     if (!saved) {
       reply.code(404);
-      return {
-        success: false,
-        error: {
-          message: "Trend not found",
-        },
-      };
+      return errorResponse(request, "Trend not found", "TREND_NOT_FOUND");
     }
 
-    return {
-      success: true,
-      data: {
+    return successResponse({
         userId,
         trendId,
         savedAt: saved.savedAt,
-      },
-    };
+      });
   });
 
   // DELETE /api/trends/saved/:trendId?userId=... - Remove saved trend for a user
@@ -131,16 +98,10 @@ export default async function trendsRoutes(app: FastifyInstance) {
 
     if (!parsedParams.success || !parsedQuery.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid request parameters",
-          details: {
-            params: parsedParams.success ? undefined : parsedParams.error.flatten(),
-            query: parsedQuery.success ? undefined : parsedQuery.error.flatten(),
-          },
-        },
-      };
+      return errorResponse(request, "Invalid request parameters", "INVALID_REQUEST_PARAMETERS", {
+        params: parsedParams.success ? undefined : parsedParams.error.flatten(),
+        query: parsedQuery.success ? undefined : parsedQuery.error.flatten(),
+      });
     }
 
     const { trendId } = parsedParams.data;
@@ -149,22 +110,14 @@ export default async function trendsRoutes(app: FastifyInstance) {
     const removed = await savedTrendService.removeSavedTrend(userId, trendId);
     if (!removed) {
       reply.code(404);
-      return {
-        success: false,
-        error: {
-          message: "Saved trend not found",
-        },
-      };
+      return errorResponse(request, "Saved trend not found", "SAVED_TREND_NOT_FOUND");
     }
 
-    return {
-      success: true,
-      data: {
+    return successResponse({
         userId,
         trendId,
         removed: true,
-      },
-    };
+      });
   });
 
   // GET /api/trends/top/topics - Get trending topics
@@ -172,21 +125,12 @@ export default async function trendsRoutes(app: FastifyInstance) {
     const parsed = LimitQuerySchema.safeParse(request.query ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid query parameters",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid query parameters", "INVALID_QUERY_PARAMETERS", parsed.error.flatten());
     }
 
     const topics = await trendService.getTrendingTopics(parsed.data.limit);
 
-    return {
-      success: true,
-      data: topics,
-    };
+    return successResponse(topics);
   });
 
   // GET /api/trends/:id - Get trend by ID
@@ -197,9 +141,9 @@ export default async function trendsRoutes(app: FastifyInstance) {
 
     if (!trend) {
       reply.code(404);
-      return { success: false, error: { message: "Trend not found" } };
+      return errorResponse(request, "Trend not found", "TREND_NOT_FOUND");
     }
 
-    return { success: true, data: trend };
+    return successResponse(trend);
   });
 }

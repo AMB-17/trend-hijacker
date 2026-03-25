@@ -4,6 +4,7 @@ import {
   UpsertUserPreferencesInputSchema,
 } from "@packages/types";
 import { userPreferenceService } from "../services/user-preference.service";
+import { errorResponse, successResponse } from "../utils/api-response";
 
 export default async function usersRoutes(app: FastifyInstance) {
   // GET /api/users/preferences?userId=...
@@ -11,30 +12,16 @@ export default async function usersRoutes(app: FastifyInstance) {
     const parsed = UserPreferencesQuerySchema.safeParse(request.query ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid query parameters",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid query parameters", "INVALID_QUERY_PARAMETERS", parsed.error.flatten());
     }
 
     const prefs = await userPreferenceService.getPreferences(parsed.data.userId);
     if (!prefs) {
       reply.code(404);
-      return {
-        success: false,
-        error: {
-          message: "User not found",
-        },
-      };
+      return errorResponse(request, "User not found", "USER_NOT_FOUND");
     }
 
-    return {
-      success: true,
-      data: prefs,
-    };
+    return successResponse(prefs);
   });
 
   // PUT /api/users/preferences
@@ -42,13 +29,7 @@ export default async function usersRoutes(app: FastifyInstance) {
     const parsed = UpsertUserPreferencesInputSchema.safeParse(request.body ?? {});
     if (!parsed.success) {
       reply.code(400);
-      return {
-        success: false,
-        error: {
-          message: "Invalid request body",
-          details: parsed.error.flatten(),
-        },
-      };
+      return errorResponse(request, "Invalid request body", "INVALID_REQUEST_BODY", parsed.error.flatten());
     }
 
     const { userId, preferences } = parsed.data;
@@ -56,17 +37,9 @@ export default async function usersRoutes(app: FastifyInstance) {
 
     if (!updated) {
       reply.code(404);
-      return {
-        success: false,
-        error: {
-          message: "User not found",
-        },
-      };
+      return errorResponse(request, "User not found", "USER_NOT_FOUND");
     }
 
-    return {
-      success: true,
-      data: updated,
-    };
+    return successResponse(updated);
   });
 }

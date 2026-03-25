@@ -1,5 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "@packages/database";
+import { errorResponse, successResponse } from "../utils/api-response";
 
 export default async function sourcesRoutes(app: FastifyInstance) {
   // GET /api/sources - Get all sources
@@ -8,10 +9,7 @@ export default async function sourcesRoutes(app: FastifyInstance) {
       orderBy: { name: "asc" },
     });
 
-    return {
-      success: true,
-      data: sources,
-    };
+    return successResponse(sources);
   });
 
   // GET /api/sources/:id/stats - Get source statistics
@@ -33,16 +31,13 @@ export default async function sourcesRoutes(app: FastifyInstance) {
 
     if (!source) {
       reply.code(404);
-      return { success: false, error: { message: "Source not found" } };
+      return errorResponse(request, "Source not found", "SOURCE_NOT_FOUND");
     }
 
-    return {
-      success: true,
-      data: {
-        ...source,
-        totalPosts: postCount,
-        recentPosts,
-      },
-    };
+    return successResponse({
+      ...source,
+      totalPosts: postCount,
+      recentPosts,
+    });
   });
 }

@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { runIngestionBatch } from "../services/batch-ingestion.service";
 import { runProcessingBatch } from "../services/batch-processing.service";
 import { alertService } from "../services/alert.service";
+import { errorResponse, successResponse } from "../utils/api-response";
 
 type DiscussionSource = "reddit" | "hackernews" | "producthunt" | "indiehackers" | "rss";
 
@@ -135,14 +136,14 @@ export default async function internalRoutes(app: FastifyInstance) {
 
     if (!assertAuthorized(secret, requestSecret)) {
       reply.code(401);
-      return { success: false, error: { message: "Unauthorized" } };
+      return errorResponse(request, "Unauthorized", "UNAUTHORIZED");
     }
 
     const idempotencyKey = normalizeHeaderValue(request.headers["x-idempotency-key"]);
     const begin = beginCronRequest("cron-alerts-evaluate", idempotencyKey);
     if (!begin.ok) {
       reply.code(begin.statusCode);
-      return { success: false, error: { message: begin.message } };
+      return errorResponse(request, begin.message, "CRON_REQUEST_REJECTED");
     }
 
     try {
@@ -159,21 +160,15 @@ export default async function internalRoutes(app: FastifyInstance) {
 
       if (userId) {
         const evaluations = await alertService.evaluateAlerts(userId, limit, deliverWebhooks);
-        return {
-          success: true,
-          data: {
-            userId,
-            evaluations,
-            evaluated: evaluations.length,
-          },
-        };
+        return successResponse({
+          userId,
+          evaluations,
+          evaluated: evaluations.length,
+        });
       }
 
       const summary = await alertService.evaluateAllAlerts(limit, deliverWebhooks);
-      return {
-        success: true,
-        data: summary,
-      };
+      return successResponse(summary);
     } finally {
       finishCronRequest("cron-alerts-evaluate", idempotencyKey);
     }
@@ -185,14 +180,14 @@ export default async function internalRoutes(app: FastifyInstance) {
 
     if (!assertAuthorized(secret, requestSecret)) {
       reply.code(401);
-      return { success: false, error: { message: "Unauthorized" } };
+      return errorResponse(request, "Unauthorized", "UNAUTHORIZED");
     }
 
     const idempotencyKey = normalizeHeaderValue(request.headers["x-idempotency-key"]);
     const begin = beginCronRequest("cron-ingest", idempotencyKey);
     if (!begin.ok) {
       reply.code(begin.statusCode);
-      return { success: false, error: { message: begin.message } };
+      return errorResponse(request, begin.message, "CRON_REQUEST_REJECTED");
     }
 
     try {
@@ -205,10 +200,7 @@ export default async function internalRoutes(app: FastifyInstance) {
         limitPerSource,
       });
 
-      return {
-        success: true,
-        data: result,
-      };
+      return successResponse(result);
     } finally {
       finishCronRequest("cron-ingest", idempotencyKey);
     }
@@ -220,14 +212,14 @@ export default async function internalRoutes(app: FastifyInstance) {
 
     if (!assertAuthorized(secret, requestSecret)) {
       reply.code(401);
-      return { success: false, error: { message: "Unauthorized" } };
+      return errorResponse(request, "Unauthorized", "UNAUTHORIZED");
     }
 
     const idempotencyKey = normalizeHeaderValue(request.headers["x-idempotency-key"]);
     const begin = beginCronRequest("cron-process", idempotencyKey);
     if (!begin.ok) {
       reply.code(begin.statusCode);
-      return { success: false, error: { message: begin.message } };
+      return errorResponse(request, begin.message, "CRON_REQUEST_REJECTED");
     }
 
     try {
@@ -242,10 +234,7 @@ export default async function internalRoutes(app: FastifyInstance) {
         minMentions,
       });
 
-      return {
-        success: true,
-        data: result,
-      };
+      return successResponse(result);
     } finally {
       finishCronRequest("cron-process", idempotencyKey);
     }
@@ -257,14 +246,14 @@ export default async function internalRoutes(app: FastifyInstance) {
 
     if (!assertAuthorized(secret, requestSecret)) {
       reply.code(401);
-      return { success: false, error: { message: "Unauthorized" } };
+      return errorResponse(request, "Unauthorized", "UNAUTHORIZED");
     }
 
     const idempotencyKey = normalizeHeaderValue(request.headers["x-idempotency-key"]);
     const begin = beginCronRequest("cron-run-all", idempotencyKey);
     if (!begin.ok) {
       reply.code(begin.statusCode);
-      return { success: false, error: { message: begin.message } };
+      return errorResponse(request, begin.message, "CRON_REQUEST_REJECTED");
     }
 
     try {
@@ -290,13 +279,10 @@ export default async function internalRoutes(app: FastifyInstance) {
         minMentions: toOptionalNumber(body.minMentions, 1, 1000),
       });
 
-      return {
-        success: true,
-        data: {
-          ingestion,
-          processing,
-        },
-      };
+      return successResponse({
+        ingestion,
+        processing,
+      });
     } finally {
       finishCronRequest("cron-run-all", idempotencyKey);
     }
