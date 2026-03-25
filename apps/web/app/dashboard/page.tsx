@@ -1,6 +1,6 @@
 'use client';
 
-import { useEarlySignals, useExplodingTrends, useOpportunityMap } from '@/lib/hooks';
+import { useAlertMatches, useEarlySignals, useExplodingTrends, useOpportunityMap } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, SkeletonGrid, Button, Badge } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import { MetricCard } from '@/components/ui/MetricCard';
@@ -27,6 +27,7 @@ export default function DashboardPage() {
     error: oppError,
     retry: retryOpportunityMap,
   } = useOpportunityMap();
+  const { matchCountByTrendId } = useAlertMatches(userId);
 
   const totalMetrics = {
     earlySignals: earlySignals?.length || 0,
@@ -95,7 +96,12 @@ export default function DashboardPage() {
         ) : earlySignals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {earlySignals.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} userId={userId} />
+              <TrendCard
+                key={trend.id}
+                trend={trend}
+                userId={userId}
+                alertMatchCount={matchCountByTrendId[trend.id] || 0}
+              />
             ))}
           </div>
         ) : (
@@ -132,7 +138,12 @@ export default function DashboardPage() {
         ) : explodingTrends.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {explodingTrends.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} userId={userId} />
+              <TrendCard
+                key={trend.id}
+                trend={trend}
+                userId={userId}
+                alertMatchCount={matchCountByTrendId[trend.id] || 0}
+              />
             ))}
           </div>
         ) : (

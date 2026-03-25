@@ -1,5 +1,6 @@
 import { prisma } from "@packages/database";
 import { type AlertRule } from "@packages/types";
+import { logger } from "@packages/utils";
 
 type AlertChannel = "in_app" | "webhook";
 
@@ -20,6 +21,17 @@ export interface AlertEvaluationResult {
   alertId: string;
   matchedTrendIds: string[];
   matchedCount: number;
+}
+
+export interface AlertEvaluationSummary {
+  usersEvaluated: number;
+  alertsEvaluated: number;
+  alertsTriggered: number;
+  webhookDeliveries: number;
+  results: Array<{
+    userId: string;
+    evaluations: AlertEvaluationResult[];
+  }>;
 }
 
 function toAlertView(alert: {
@@ -55,6 +67,42 @@ function toAlertView(alert: {
 }
 
 export class AlertService {
+  private async deliverWebhook(
+    webhookUrl: string,
+    payload: {
+      alertId: string;
+      userId: string;
+      matchedTrendIds: string[];
+      matchedCount: number;
+      triggeredAt: string;
+    }
+  ): Promise<boolean> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+
+      return response.ok;
+    } catch (error) {
+      logger.error("[AlertService] Webhook delivery failed", {
+        webhookUrl,
+        alertId: payload.alertId,
+        error,
+      });
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async listAlerts(userId: string, enabledOnly = false): Promise<AlertView[]> {
     const alerts = await prisma.alert.findMany({
       where: {
@@ -143,7 +191,7 @@ export class AlertService {
     return deleted.count > 0;
   }
 
-  async evaluateAlerts(userId: string, limit = 20): Promise<AlertEvaluationResult[]> {
+  async evaluateAlerts(userId: string, limit = 20, deliverWebhooks = false): Promise<AlertEvaluationResult[]> {
     const [alerts, trends] = await Promise.all([
       prisma.alert.findMany({
         where: { userId, enabled: true },
@@ -194,6 +242,16 @@ export class AlertService {
           where: { id: alert.id },
           data: { lastTriggeredAt: new Date() },
         });
+
+        if (deliverWebhooks && alert.channel === "webhook" && alert.webhookUrl) {
+          await this.deliverWebhook(alert.webhookUrl, {
+            alertId: alert.id,
+            userId,
+            matchedTrendIds,
+            matchedCount: matchedTrendIds.length,
+            triggeredAt: new Date().toISOString(),
+          });
+        }
       }
 
       results.push({
@@ -204,6 +262,61 @@ export class AlertService {
     }
 
     return results;
+  }
+
+  async evaluateAllAlerts(limit = 20, deliverWebhooks = false): Promise<AlertEvaluationSummary> {
+    const users = await prisma.user.findMany({
+      where: {
+        alerts: {
+          some: {
+            enabled: true,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const summary: AlertEvaluationSummary = {
+      usersEvaluated: users.length,
+      alertsEvaluated: 0,
+      alertsTriggered: 0,
+      webhookDeliveries: 0,
+      results: [],
+    };
+
+    for (const user of users) {
+      const evaluations = await this.evaluateAlerts(user.id, limit, deliverWebhooks);
+
+      const webhookAlertIds = deliverWebhooks
+        ? new Set(
+            (
+              await prisma.alert.findMany({
+                where: { userId: user.id, enabled: true, channel: "webhook" },
+                select: { id: true },
+              })
+            ).map((item: { id: string }) => item.id)
+          )
+        : new Set<string>();
+
+      const triggeredForUser = evaluations.filter(item => item.matchedCount > 0).length;
+      const webhookDeliveriesForUser = evaluations.filter(
+        item => item.matchedCount > 0 && webhookAlertIds.has(item.alertId)
+      ).length;
+
+      summary.alertsEvaluated += evaluations.length;
+      summary.alertsTriggered += triggeredForUser;
+      if (deliverWebhooks) {
+        summary.webhookDeliveries += webhookDeliveriesForUser;
+      }
+      summary.results.push({
+        userId: user.id,
+        evaluations,
+      });
+    }
+
+    return summary;
   }
 }
 

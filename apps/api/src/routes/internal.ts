@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { timingSafeEqual } from "crypto";
 import { runIngestionBatch } from "../services/batch-ingestion.service";
 import { runProcessingBatch } from "../services/batch-processing.service";
+import { alertService } from "../services/alert.service";
 
 type DiscussionSource = "reddit" | "hackernews" | "producthunt" | "indiehackers" | "rss";
 
@@ -81,6 +82,14 @@ function toOptionalNumber(value: unknown, min?: number, max?: number): number | 
   return value;
 }
 
+function toOptionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return undefined;
+}
+
 function cleanupCompletedKeys(now: number): void {
   for (const [key, expiresAt] of completedRequestKeys.entries()) {
     if (expiresAt <= now) {
@@ -120,6 +129,56 @@ function finishCronRequest(routeName: string, idempotencyKey: string | undefined
 }
 
 export default async function internalRoutes(app: FastifyInstance) {
+  app.post("/cron/alerts-evaluate", async (request, reply) => {
+    const secret = process.env.CRON_SECRET;
+    const requestSecret = request.headers["x-cron-secret"];
+
+    if (!assertAuthorized(secret, requestSecret)) {
+      reply.code(401);
+      return { success: false, error: { message: "Unauthorized" } };
+    }
+
+    const idempotencyKey = normalizeHeaderValue(request.headers["x-idempotency-key"]);
+    const begin = beginCronRequest("cron-alerts-evaluate", idempotencyKey);
+    if (!begin.ok) {
+      reply.code(begin.statusCode);
+      return { success: false, error: { message: begin.message } };
+    }
+
+    try {
+      const body =
+        (request.body as {
+          userId?: unknown;
+          limit?: unknown;
+          deliverWebhooks?: unknown;
+        } | undefined) ?? {};
+
+      const userId = typeof body.userId === "string" ? body.userId : undefined;
+      const limit = toOptionalNumber(body.limit, 1, 200) ?? 20;
+      const deliverWebhooks = toOptionalBoolean(body.deliverWebhooks) ?? false;
+
+      if (userId) {
+        const evaluations = await alertService.evaluateAlerts(userId, limit, deliverWebhooks);
+        return {
+          success: true,
+          data: {
+            userId,
+            evaluations,
+            evaluated: evaluations.length,
+          },
+        };
+      }
+
+      const summary = await alertService.evaluateAllAlerts(limit, deliverWebhooks);
+      return {
+        success: true,
+        data: summary,
+      };
+    } finally {
+      finishCronRequest("cron-alerts-evaluate", idempotencyKey);
+    }
+  });
+
   app.post("/cron/ingest", async (request, reply) => {
     const secret = process.env.CRON_SECRET;
     const requestSecret = request.headers["x-cron-secret"];

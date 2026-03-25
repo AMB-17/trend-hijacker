@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTrends } from '@/lib/hooks';
+import { useAlertMatches, useTrends } from '@/lib/hooks';
 import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import type { TrendFilters } from '@packages/types';
@@ -24,6 +24,7 @@ export default function TrendsPage() {
   });
 
   const { data: trends, loading, error, total, hasMore, refetch } = useTrends(filters);
+  const { matchCountByTrendId } = useAlertMatches(userId);
 
   const handleStageChange = (stage: string) => {
     setFilters((prev) => ({
@@ -194,7 +195,12 @@ export default function TrendsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {trends.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} userId={userId} />
+              <TrendCard
+                key={trend.id}
+                trend={trend}
+                userId={userId}
+                alertMatchCount={matchCountByTrendId[trend.id] || 0}
+              />
             ))}
           </div>
 

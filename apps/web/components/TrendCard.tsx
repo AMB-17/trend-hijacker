@@ -8,9 +8,10 @@ import { apiClient } from '@/lib/api/client';
 interface TrendCardProps {
   trend: any;
   userId?: string;
+  alertMatchCount?: number;
 }
 
-export function TrendCard({ trend, userId }: TrendCardProps) {
+export function TrendCard({ trend, userId, alertMatchCount = 0 }: TrendCardProps) {
   const [isSaved, setIsSaved] = useState(Boolean(trend.isSaved));
   const [saving, setSaving] = useState(false);
 
@@ -59,6 +60,9 @@ export function TrendCard({ trend, userId }: TrendCardProps) {
             </Badge>
           )}
           {isSaved && <Badge variant="success">Saved</Badge>}
+          {alertMatchCount > 0 && (
+            <Badge variant="warning">{alertMatchCount} alert match{alertMatchCount > 1 ? 'es' : ''}</Badge>
+          )}
         </div>
 
         {/* Metrics */}

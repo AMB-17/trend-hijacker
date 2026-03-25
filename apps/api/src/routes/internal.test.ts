@@ -10,6 +10,19 @@ vi.mock('../services/batch-processing.service', () => ({
   runProcessingBatch: vi.fn().mockResolvedValue({ processed: 2 }),
 }));
 
+vi.mock('../services/alert.service', () => ({
+  alertService: {
+    evaluateAlerts: vi.fn().mockResolvedValue([{ alertId: 'a1', matchedTrendIds: ['t1'], matchedCount: 1 }]),
+    evaluateAllAlerts: vi.fn().mockResolvedValue({
+      usersEvaluated: 1,
+      alertsEvaluated: 1,
+      alertsTriggered: 1,
+      webhookDeliveries: 0,
+      results: [{ userId: 'u1', evaluations: [{ alertId: 'a1', matchedTrendIds: ['t1'], matchedCount: 1 }] }],
+    }),
+  },
+}));
+
 describe('internal cron routes security', () => {
   beforeEach(() => {
     process.env.CRON_SECRET = 'a'.repeat(64);
@@ -61,6 +74,58 @@ describe('internal cron routes security', () => {
     expect(second.json()).toMatchObject({
       success: false,
       error: { message: 'Duplicate idempotency key' },
+    });
+
+    await app.close();
+  });
+
+  it('evaluates alerts for a single user when userId is provided', async () => {
+    const app = Fastify();
+    await app.register(internalRoutes, { prefix: '/api/internal' });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/internal/cron/alerts-evaluate',
+      payload: {
+        userId: 'u1',
+        limit: 10,
+      },
+      headers: { 'x-cron-secret': process.env.CRON_SECRET as string },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: true,
+      data: {
+        userId: 'u1',
+        evaluated: 1,
+      },
+    });
+
+    await app.close();
+  });
+
+  it('evaluates alerts for all users when userId is omitted', async () => {
+    const app = Fastify();
+    await app.register(internalRoutes, { prefix: '/api/internal' });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/internal/cron/alerts-evaluate',
+      payload: {
+        limit: 20,
+        deliverWebhooks: true,
+      },
+      headers: { 'x-cron-secret': process.env.CRON_SECRET as string },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: true,
+      data: {
+        usersEvaluated: 1,
+        alertsEvaluated: 1,
+      },
     });
 
     await app.close();

@@ -183,3 +183,46 @@ export function useAlerts(userId: string) {
     refetch: fetchAlerts,
   };
 }
+
+export function useAlertMatches(userId: string) {
+  const [matchCountByTrendId, setMatchCountByTrendId] = useState<Record<string, number>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchMatches = useCallback(async () => {
+    if (!userId) {
+      setMatchCountByTrendId({});
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const evaluations: AlertEvaluation[] = await apiClient.evaluateAlerts(userId, 50);
+      const counts: Record<string, number> = {};
+
+      for (const item of evaluations) {
+        for (const trendId of item.matchedTrendIds) {
+          counts[trendId] = (counts[trendId] || 0) + 1;
+        }
+      }
+
+      setMatchCountByTrendId(counts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to evaluate alert matches');
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchMatches();
+  }, [fetchMatches]);
+
+  return {
+    matchCountByTrendId,
+    loading,
+    error,
+    refetch: fetchMatches,
+  };
+}
