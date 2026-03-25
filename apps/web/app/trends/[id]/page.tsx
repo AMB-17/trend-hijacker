@@ -104,6 +104,21 @@ export default function TrendDetailPage() {
     { timestamp: 'Week 6', value: 95 },
   ];
 
+  const sourceLinks = (trend.posts || [])
+    .map((entry: any) => {
+      const post = entry?.post || entry;
+      if (!post?.url) return null;
+      return {
+        url: post.url as string,
+        title: (post.title as string) || 'Source discussion',
+        sourceName: (post?.source?.name as string) || 'source',
+      };
+    })
+    .filter((item: { url: string; title: string; sourceName: string } | null): item is { url: string; title: string; sourceName: string } => Boolean(item));
+
+  const uniqueSourceLinks = Array.from(new Map(sourceLinks.map(item => [item.url, item])).values());
+  const mainSource = uniqueSourceLinks[0];
+
   return (
     <div className="space-y-6 pb-8">
       {/* Back Button */}
@@ -141,11 +156,45 @@ export default function TrendDetailPage() {
                 <Button size="sm" variant="outline" onClick={toggleSaved} isLoading={saving} className="w-full">
                   {isSaved ? 'Unsave Trend' : 'Save Trend'}
                 </Button>
+                {mainSource ? (
+                  <a href={mainSource.url} target="_blank" rel="noopener noreferrer" className="w-full">
+                    <Button size="sm" variant="secondary" className="w-full">
+                      Open Main Source
+                    </Button>
+                  </a>
+                ) : (
+                  <Button size="sm" variant="secondary" className="w-full" disabled>
+                    Open Main Source
+                  </Button>
+                )}
               </div>
             </div>
           </div>
         </CardHeader>
       </Card>
+
+      {uniqueSourceLinks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <h3 className="font-semibold text-foreground">Source Links</h3>
+            <p className="text-sm text-muted mt-1">Primary websites or repositories where this trend was detected</p>
+          </CardHeader>
+          <CardBody className="space-y-3">
+            {uniqueSourceLinks.slice(0, 5).map((item) => (
+              <a
+                key={item.url}
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-3 rounded-lg border border-border bg-card/40 hover:bg-card transition-colors"
+              >
+                <p className="font-medium text-foreground line-clamp-1">{item.title}</p>
+                <p className="text-xs text-muted mt-1">Source: {item.sourceName}</p>
+              </a>
+            ))}
+          </CardBody>
+        </Card>
+      )}
 
       {/* Metrics Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

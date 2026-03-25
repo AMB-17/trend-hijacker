@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAlertMatches, useTrends } from '@/lib/hooks';
 import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
@@ -25,6 +25,25 @@ export default function TrendsPage() {
 
   const { data: trends, loading, error, total, hasMore, refetch } = useTrends(filters);
   const { matchCountByTrendId } = useAlertMatches(userId);
+
+  const filteredTrends = useMemo(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    if (!normalized) {
+      return trends;
+    }
+
+    return trends.filter(trend => {
+      const haystack = [
+        trend.title,
+        trend.summary,
+        ...(trend.keywords || []),
+      ]
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalized);
+    });
+  }, [trends, searchQuery]);
 
   const handleStageChange = (stage: string) => {
     setFilters((prev) => ({
@@ -171,7 +190,7 @@ export default function TrendsPage() {
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted">
-          Showing {trends.length} of {total} trends
+          Showing {filteredTrends.length} of {total} trends
         </p>
       </div>
 
@@ -191,10 +210,10 @@ export default function TrendsPage() {
       {loading && filters.offset === 0 && <SkeletonGrid count={6} />}
 
       {/* Trends Grid */}
-      {!loading && trends.length > 0 ? (
+      {!loading && filteredTrends.length > 0 ? (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {trends.map((trend) => (
+            {filteredTrends.map((trend) => (
               <TrendCard
                 key={trend.id}
                 trend={trend}

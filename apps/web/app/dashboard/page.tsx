@@ -14,13 +14,13 @@ export default function DashboardPage() {
     loading: earlyLoading,
     error: earlyError,
     retry: retryEarlySignals,
-  } = useEarlySignals(6);
+  } = useEarlySignals(12);
   const {
     data: explodingTrends,
     loading: explodingLoading,
     error: explodingError,
     retry: retryExplodingTrends,
-  } = useExplodingTrends(6);
+  } = useExplodingTrends(12);
   const {
     data: opportunityMap,
     loading: oppLoading,
@@ -186,7 +186,7 @@ export default function DashboardPage() {
               </p>
             </CardHeader>
             <CardBody className="space-y-3">
-              {opportunityMap.quadrants.quickWins.slice(0, 3).map((item) => (
+              {opportunityMap.quadrants.quickWins.slice(0, 6).map((item) => (
                 <div key={item.id} className="p-3 bg-card/50 rounded-lg border border-border/50">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1">
