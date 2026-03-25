@@ -23,8 +23,28 @@ model User {
 
   savedTrends SavedTrend[]
   reports     Report[]
+  alerts      Alert[]
 
   @@index([email])
+}
+
+model Alert {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  minOpportunityScore Float    @default(70)
+  stages              String[] @default([])
+  keywords            String[] @default([])
+  channel             String   @default("in_app")
+  webhookUrl          String?
+  enabled             Boolean  @default(true)
+  lastTriggeredAt     DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([userId, enabled])
+  @@index([createdAt])
 }
 
 enum Tier {

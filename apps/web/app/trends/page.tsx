@@ -6,13 +6,16 @@ import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import type { TrendFilters } from '@packages/types';
 import { Search } from 'lucide-react';
+import { DEMO_USER_ID } from '@/lib/user-context';
 
 const stages = ['early_signal', 'emerging', 'exploding'];
 const statuses = ['EMERGING', 'ACTIVE', 'DECLINING'];
 
 export default function TrendsPage() {
+  const userId = DEMO_USER_ID;
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<TrendFilters>({
+    userId,
     stage: undefined,
     status: undefined,
     sortBy: 'score',
@@ -149,6 +152,7 @@ export default function TrendsPage() {
               size="sm"
               onClick={() =>
                 setFilters({
+                  userId,
                   stage: undefined,
                   status: undefined,
                   sortBy: 'score',
@@ -190,7 +194,7 @@ export default function TrendsPage() {
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {trends.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} />
+              <TrendCard key={trend.id} trend={trend} userId={userId} />
             ))}
           </div>
 

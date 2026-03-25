@@ -88,6 +88,37 @@ export interface Post {
   source: string;
 }
 
+export interface UserPreferences {
+  preferredStages: string[];
+  minOpportunityScore: number;
+  digestCadence: 'off' | 'daily' | 'weekly';
+}
+
+export interface AlertRule {
+  minOpportunityScore: number;
+  stages: string[];
+  keywords: string[];
+}
+
+export interface Alert {
+  id: string;
+  userId: string;
+  name: string;
+  rule: AlertRule;
+  channel: 'in_app' | 'webhook';
+  webhookUrl?: string;
+  enabled: boolean;
+  lastTriggeredAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AlertEvaluation {
+  alertId: string;
+  matchedTrendIds: string[];
+  matchedCount: number;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -353,6 +384,113 @@ class ApiClient {
       : `/api/search/suggestions?limit=${limit}`;
 
     const response = await this.fetch<{ data: string[] }>(endpoint);
+    return response.data;
+  }
+
+  async getSavedTrends(userId: string, limit = 50, offset = 0): Promise<PaginatedResponse<Trend[]>> {
+    const response = await this.fetch<{
+      data: Trend[];
+      meta?: { total: number; hasMore: boolean; limit: number; offset: number };
+    }>(`/api/trends/saved?userId=${encodeURIComponent(userId)}&limit=${limit}&offset=${offset}`);
+
+    return {
+      data: response.data,
+      total: response.meta?.total || 0,
+      hasMore: response.meta?.hasMore || false,
+      meta: response.meta,
+    };
+  }
+
+  async saveTrend(userId: string, trendId: string): Promise<{ savedAt: string }> {
+    const response = await this.fetch<{ data: { savedAt: string } }>(`/api/trends/saved`, {
+      method: 'POST',
+      body: JSON.stringify({ userId, trendId }),
+    });
+
+    return response.data;
+  }
+
+  async removeSavedTrend(userId: string, trendId: string): Promise<boolean> {
+    const response = await this.fetch<{ data: { removed: boolean } }>(
+      `/api/trends/saved/${encodeURIComponent(trendId)}?userId=${encodeURIComponent(userId)}`,
+      { method: 'DELETE' }
+    );
+
+    return response.data.removed;
+  }
+
+  async getUserPreferences(userId: string): Promise<UserPreferences> {
+    const response = await this.fetch<{ data: UserPreferences }>(
+      `/api/users/preferences?userId=${encodeURIComponent(userId)}`
+    );
+    return response.data;
+  }
+
+  async updateUserPreferences(userId: string, preferences: UserPreferences): Promise<UserPreferences> {
+    const response = await this.fetch<{ data: UserPreferences }>(`/api/users/preferences`, {
+      method: 'PUT',
+      body: JSON.stringify({ userId, preferences }),
+    });
+
+    return response.data;
+  }
+
+  async listAlerts(userId: string, enabledOnly = false): Promise<Alert[]> {
+    const response = await this.fetch<{ data: Alert[] }>(
+      `/api/alerts?userId=${encodeURIComponent(userId)}&enabledOnly=${enabledOnly}`
+    );
+    return response.data;
+  }
+
+  async createAlert(input: {
+    userId: string;
+    name: string;
+    rule: AlertRule;
+    channel?: 'in_app' | 'webhook';
+    webhookUrl?: string;
+    enabled?: boolean;
+  }): Promise<Alert> {
+    const response = await this.fetch<{ data: Alert }>(`/api/alerts`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+
+    return response.data;
+  }
+
+  async updateAlert(
+    id: string,
+    input: {
+      userId: string;
+      name?: string;
+      rule?: AlertRule;
+      channel?: 'in_app' | 'webhook';
+      webhookUrl?: string;
+      enabled?: boolean;
+    }
+  ): Promise<Alert> {
+    const response = await this.fetch<{ data: Alert }>(`/api/alerts/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    });
+
+    return response.data;
+  }
+
+  async deleteAlert(id: string, userId: string): Promise<boolean> {
+    const response = await this.fetch<{ data: { deleted: boolean } }>(
+      `/api/alerts/${encodeURIComponent(id)}?userId=${encodeURIComponent(userId)}`,
+      { method: 'DELETE' }
+    );
+
+    return response.data.deleted;
+  }
+
+  async evaluateAlerts(userId: string, limit = 20): Promise<AlertEvaluation[]> {
+    const response = await this.fetch<{ data: AlertEvaluation[] }>(
+      `/api/alerts/evaluate?userId=${encodeURIComponent(userId)}&limit=${limit}`
+    );
+
     return response.data;
   }
 }

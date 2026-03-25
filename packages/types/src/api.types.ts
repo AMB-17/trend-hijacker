@@ -21,6 +21,7 @@ export interface PaginationParams {
 }
 
 export interface TrendFilters extends PaginationParams {
+  userId?: string;
   stage?: string;
   status?: string;
   minScore?: number;

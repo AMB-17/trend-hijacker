@@ -9,6 +9,8 @@ const sidebarLinks = [
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/early-signals', label: 'Early Signals', icon: '⚡' },
   { href: '/opportunities', label: 'Opportunities', icon: '🎯' },
+  { href: '/alerts', label: 'Alerts', icon: '🔔' },
+  { href: '/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export function Sidebar() {

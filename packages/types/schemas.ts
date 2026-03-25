@@ -124,6 +124,50 @@ export const UpsertUserPreferencesInputSchema = z.object({
   preferences: UserPreferencesSchema,
 });
 
+export const AlertChannelSchema = z.enum(["in_app", "webhook"]);
+
+export const AlertRuleSchema = z.object({
+  minOpportunityScore: z.number().min(0).max(100).default(70),
+  stages: z.array(z.string().min(1).max(64)).max(10).default([]),
+  keywords: z.array(z.string().min(1).max(128)).max(20).default([]),
+});
+
+export const AlertsListQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
+  enabledOnly: z.coerce.boolean().default(false),
+});
+
+export const CreateAlertInputSchema = z.object({
+  userId: z.string().min(1).max(128),
+  name: z.string().min(1).max(120),
+  rule: AlertRuleSchema,
+  channel: AlertChannelSchema.default("in_app"),
+  webhookUrl: z.string().url().optional(),
+  enabled: z.boolean().default(true),
+});
+
+export const UpdateAlertParamsSchema = z.object({
+  id: z.string().min(1).max(128),
+});
+
+export const UpdateAlertInputSchema = z.object({
+  userId: z.string().min(1).max(128),
+  name: z.string().min(1).max(120).optional(),
+  rule: AlertRuleSchema.optional(),
+  channel: AlertChannelSchema.optional(),
+  webhookUrl: z.string().url().optional(),
+  enabled: z.boolean().optional(),
+});
+
+export const DeleteAlertQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
+});
+
+export const EvaluateAlertsQuerySchema = z.object({
+  userId: z.string().min(1).max(128),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+});
+
 export const RemoveSavedTrendParamsSchema = z.object({
   trendId: z.string().min(1).max(128),
 });
@@ -153,3 +197,6 @@ export type SavedTrendsQuery = z.infer<typeof SavedTrendsQuerySchema>;
 export type SaveTrendInput = z.infer<typeof SaveTrendInputSchema>;
 export type UserPreferences = z.infer<typeof UserPreferencesSchema>;
 export type UpsertUserPreferencesInput = z.infer<typeof UpsertUserPreferencesInputSchema>;
+export type AlertRule = z.infer<typeof AlertRuleSchema>;
+export type CreateAlertInput = z.infer<typeof CreateAlertInputSchema>;
+export type UpdateAlertInput = z.infer<typeof UpdateAlertInputSchema>;

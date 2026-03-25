@@ -5,8 +5,10 @@ import { Card, CardBody, CardHeader, SkeletonGrid, Button, Badge } from '@/compo
 import { TrendCard } from '@/components/TrendCard';
 import { MetricCard } from '@/components/ui/MetricCard';
 import Link from 'next/link';
+import { DEMO_USER_ID } from '@/lib/user-context';
 
 export default function DashboardPage() {
+  const userId = DEMO_USER_ID;
   const {
     data: earlySignals,
     loading: earlyLoading,
@@ -93,7 +95,7 @@ export default function DashboardPage() {
         ) : earlySignals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {earlySignals.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} />
+              <TrendCard key={trend.id} trend={trend} userId={userId} />
             ))}
           </div>
         ) : (
@@ -130,7 +132,7 @@ export default function DashboardPage() {
         ) : explodingTrends.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {explodingTrends.map((trend) => (
-              <TrendCard key={trend.id} trend={trend} />
+              <TrendCard key={trend.id} trend={trend} userId={userId} />
             ))}
           </div>
         ) : (

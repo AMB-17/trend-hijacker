@@ -13,6 +13,7 @@ import searchRoutes from "./routes/search";
 import sourcesRoutes from "./routes/sources";
 import internalRoutes from "./routes/internal";
 import usersRoutes from "./routes/users";
+import alertsRoutes from "./routes/alerts";
 
 // Middleware
 import { errorHandler } from "./middleware/error-handler";
@@ -84,6 +85,7 @@ export async function buildApp() {
   await app.register(sourcesRoutes, { prefix: "/api/sources" });
   await app.register(internalRoutes, { prefix: "/api/internal" });
   await app.register(usersRoutes, { prefix: "/api/users" });
+  await app.register(alertsRoutes, { prefix: "/api/alerts" });
 
   // Error handler
   app.setErrorHandler(errorHandler);

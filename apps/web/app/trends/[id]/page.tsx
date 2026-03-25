@@ -1,16 +1,56 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTrendById } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, Button, Badge, StatusBadge, OpportunityScore, MomentumChart, VelocityIndicator } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api/client';
+import { DEMO_USER_ID } from '@/lib/user-context';
 
 export default function TrendDetailPage() {
+  const userId = DEMO_USER_ID;
   const params = useParams();
   const trendId = params?.id as string;
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const { data: trend, loading, error, retry } = useTrendById(trendId);
+
+  useEffect(() => {
+    if (!trendId || !userId) {
+      return;
+    }
+
+    apiClient
+      .getSavedTrends(userId, 200, 0)
+      .then(response => {
+        setIsSaved(response.data.some(item => item.id === trendId));
+      })
+      .catch(() => {
+        setIsSaved(false);
+      });
+  }, [trendId, userId]);
+
+  const toggleSaved = async () => {
+    if (!trendId || saving) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (isSaved) {
+        await apiClient.removeSavedTrend(userId, trendId);
+        setIsSaved(false);
+      } else {
+        await apiClient.saveTrend(userId, trendId);
+        setIsSaved(true);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (error) {
     return (
@@ -86,6 +126,7 @@ export default function TrendDetailPage() {
                 <div className="flex flex-wrap gap-2 items-center">
                   <StatusBadge stage={trend.stage} />
                   <Badge variant="primary">{trend.status}</Badge>
+                  {isSaved && <Badge variant="success">Saved</Badge>}
                   {trend.momentum && (
                     <Badge variant={trend.momentum === 'accelerating' ? 'danger' : 'success'}>
                       {trend.momentum.charAt(0).toUpperCase() + trend.momentum.slice(1)}
@@ -94,9 +135,12 @@ export default function TrendDetailPage() {
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-2">
+              <div className="flex flex-col items-center gap-2 min-w-[140px]">
                 <OpportunityScore score={trend.opportunityScore} size="lg" />
                 <p className="text-sm text-muted">Opportunity Score</p>
+                <Button size="sm" variant="outline" onClick={toggleSaved} isLoading={saving} className="w-full">
+                  {isSaved ? 'Unsave Trend' : 'Save Trend'}
+                </Button>
               </div>
             </div>
           </div>
