@@ -351,6 +351,38 @@ export class TrendService {
     await cacheService.deletePattern("user:*:trends:*");
     logger.info("[TrendService] Cache invalidated");
   }
+
+  /**
+   * Get posts for a trend (for AI analysis)
+   */
+  async getTrendPosts(trendId: string, limit: number = 10) {
+    try {
+      const trendPosts = await prisma.trendPost.findMany({
+        where: { trendId },
+        include: {
+          post: {
+            select: {
+              id: true,
+              title: true,
+              content: true,
+              url: true,
+              upvotes: true,
+              comments: true,
+              publishedAt: true,
+              source: { select: { name: true } },
+            },
+          },
+        },
+        orderBy: { relevance: "desc" },
+        take: limit,
+      });
+
+      return trendPosts.map(tp => tp.post);
+    } catch (error) {
+      logger.error(`[TrendService] Error getting trend posts ${trendId}:`, error);
+      return [];
+    }
+  }
 }
 
 // Export singleton instance

@@ -4,6 +4,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import websocket from "@fastify/websocket";
 import { logger } from "@packages/utils";
+import { openaiService } from "./services/openai.service";
 
 // Routes
 import trendsRoutes from "./routes/trends";
@@ -14,6 +15,10 @@ import sourcesRoutes from "./routes/sources";
 import internalRoutes from "./routes/internal";
 import usersRoutes from "./routes/users";
 import alertsRoutes from "./routes/alerts";
+import alertConfigRoutes from "./routes/alert-config";
+import workspacesRoutes from "./routes/workspaces";
+import collectionsRoutes from "./routes/collections";
+import { trendAnalyticsRoutes } from "./routes/analytics";
 
 // Middleware
 import { errorHandler } from "./middleware/error-handler";
@@ -23,6 +28,9 @@ export async function buildApp() {
     logger: false, // Using Winston instead
     bodyLimit: 1048576, // 1MB request body limit
   });
+
+  // Initialize OpenAI service
+  openaiService.initialize();
 
   // Register plugins
 
@@ -86,6 +94,10 @@ export async function buildApp() {
   await app.register(internalRoutes, { prefix: "/api/internal" });
   await app.register(usersRoutes, { prefix: "/api/users" });
   await app.register(alertsRoutes, { prefix: "/api/alerts" });
+  await app.register(alertConfigRoutes, { prefix: "/api/alerts-config" });
+  await app.register(workspacesRoutes, { prefix: "/api/workspaces" });
+  await app.register(collectionsRoutes, { prefix: "/api/collections" });
+  await app.register(trendAnalyticsRoutes, { prefix: "/api" });
 
   // Error handler
   app.setErrorHandler(errorHandler);

@@ -1,8 +1,9 @@
 import { prisma } from "@packages/database";
 import { type AlertRule } from "@packages/types";
 import { logger } from "@packages/utils";
+import { AlertDeliveryService } from "./alert-delivery.service";
 
-type AlertChannel = "in_app" | "webhook";
+type AlertChannel = "in_app" | "webhook" | "email" | "slack";
 
 export interface AlertView {
   id: string;
@@ -321,3 +322,91 @@ export class AlertService {
 }
 
 export const alertService = new AlertService();
+
+// Multi-channel alert methods
+export const multiChannelAlertService = {
+  /**
+   * Get alert configuration with all settings
+   */
+  async getAlertConfig(userId: string) {
+    let config = await prisma.alertConfig.findUnique({
+      where: { userId },
+      include: { rules: true },
+    });
+
+    if (!config) {
+      config = await prisma.alertConfig.create({
+        data: { userId, emailEnabled: true },
+        include: { rules: true },
+      });
+    }
+
+    return config;
+  },
+
+  /**
+   * Update alert configuration
+   */
+  async updateAlertConfig(userId: string, data: Record<string, any>) {
+    return prisma.alertConfig.update({
+      where: { userId },
+      data,
+      include: { rules: true },
+    });
+  },
+
+  /**
+   * Create alert rule
+   */
+  async createAlertRule(userId: string, configId: string, data: Record<string, any>) {
+    return prisma.alertRule.create({
+      data: {
+        userId,
+        configId,
+        ...data,
+      },
+    });
+  },
+
+  /**
+   * Get alert history
+   */
+  async getAlertHistory(
+    userId: string,
+    options: { page?: number; limit?: number; status?: string; channel?: string } = {}
+  ) {
+    const page = options.page || 1;
+    const limit = options.limit || 20;
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+    if (options.status) where.status = options.status;
+    if (options.channel) where.channel = options.channel;
+
+    const [items, total] = await Promise.all([
+      prisma.alertHistory.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.alertHistory.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
+  },
+
+  /**
+   * Send test alert
+   */
+  async sendTestAlert(userId: string, channel: string) {
+    const config = await this.getAlertConfig(userId);
+    return AlertDeliveryService.createAndSendAlert({
+      userId,
+      configId: config.id,
+      subject: "Test Alert - Trend Hijacker",
+      message: "🧪 This is a test notification from Trend Hijacker.",
+      channel: channel as any,
+    });
+  },
+};

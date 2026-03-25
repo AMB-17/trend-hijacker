@@ -21,9 +21,27 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  savedTrends SavedTrend[]
-  reports     Report[]
-  alerts      Alert[]
+  savedTrends      SavedTrend[]
+  reports          Report[]
+  alerts           Alert[]
+  generatedIdeas   GeneratedIdea[]
+  ideaFeedback     IdeaFeedback[]
+  
+  // Feature 2: Alert System
+  alertConfigs     AlertConfig[]
+  alertRules       AlertRule[]
+  alertHistories   AlertHistory[]
+  
+  // Feature 3: Workspaces & Collections
+  workspaces       Workspace[]
+  workspaceMembers WorkspaceMember[]
+  collections      Collection[]
+  collectionComments CollectionComment[]
+  
+  // Feature 4: Reports & Scheduled Reporting
+  reportTemplates  ReportTemplate[]
+  generatedReports GeneratedReport[]
+  scheduledReports ScheduledReport[]
 
   @@index([email])
 }
@@ -155,10 +173,24 @@ model Trend {
   keywords        String[] @default([]) // Array of keywords
 
   // Relationships
-  posts   TrendPost[]
-  topics  Topic[]
-  savedBy SavedTrend[]
-  reports ReportTrend[]
+  posts          TrendPost[]
+  topics         Topic[]
+  savedBy        SavedTrend[]
+  reports        ReportTrend[]
+  generatedIdeas GeneratedIdea[]
+  insights       TrendInsight?
+  sentiments     TrendSentiment[]
+  subTrends      TrendSubTrend[]
+  tags           TrendTag[]
+  
+  // Feature 4 relationships
+  timeseries      TrendTimeSeries[]
+  cohortAnalysis  CohortAnalysis[]
+  competitiveLandscape CompetitiveLandscape?
+  
+  // Feature 5 relationships
+  cachedInsight   CachedInsight?
+  cohortInterests TrendCohortInterest[]
 
   @@index([status])
   @@index([opportunityScore])
@@ -231,3 +263,714 @@ model VelocitySnapshot {
   @@index([keyword, timestamp])
   @@index([timestamp])
 }
+
+// FEATURE 1: AI-Powered Idea Generator & Market Validator
+model GeneratedIdea {
+  id               String   @id @default(cuid())
+  trendId          String
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Idea Details
+  name             String
+  description      String   @db.Text
+  targetMarket     String
+  difficultScore   Float    @default(5) // 1-10 scale
+  
+  // Market Validation
+  marketSize       String   // "small", "medium", "large"
+  competitionScore Float    @default(5) // 1-10 scale (higher = more competition)
+  viabilityScore   Float    @default(0.5) // 0-1 scale, calculated
+  recommendation   String   @default("REVIEW") // "GO", "NO-GO", "REVIEW"
+  
+  // Metadata
+  metadata         Json?    // Store generation parameters, costs, etc.
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  feedback         IdeaFeedback[]
+
+  @@index([trendId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model IdeaFeedback {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      GeneratedIdea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  rating    Int      // 1-5 scale
+  feedback  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@unique([ideaId, userId])
+  @@index([ideaId])
+  @@index([userId])
+}
+
+// FEATURE 5: AI-Powered Trend Insights & Sentiment Analysis
+model TrendInsight {
+  id           String   @id @default(cuid())
+  trendId      String   @unique
+  trend        Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // AI Analysis
+  summary      String   @db.Text // 1-paragraph AI explanation
+  drivers      String[] @default([]) // Key drivers (why trend is growing)
+  riskLevel    Int      @default(5) // 1-10 scale
+  
+  // Industry Classification
+  industries   String[] @default([]) // Affected industries
+  impact       String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH"
+  
+  // Caching Control
+  metadata     Json?    // Store generation parameters, costs, etc.
+  generatedAt  DateTime @default(now())
+  expiresAt    DateTime // 7-day TTL by default
+  updatedAt    DateTime @updatedAt
+
+  @@index([trendId])
+  @@index([expiresAt])
+}
+
+model TrendSentiment {
+  id           String   @id @default(cuid())
+  trendId      String
+  trend        Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // Sentiment Distribution
+  positiveScore   Float  @default(0) // 0-1 percentage
+  negativeScore   Float  @default(0) // 0-1 percentage
+  neutralScore    Float  @default(0) // 0-1 percentage
+  overallScore    Float  @default(0) // -1 to 1 scale
+  
+  // Temporal tracking
+  timestamp    DateTime @default(now())
+  sampleSize   Int      @default(0) // Number of posts analyzed
+
+  @@index([trendId, timestamp])
+  @@index([timestamp])
+}
+
+model TrendSubTrend {
+  id           String   @id @default(cuid())
+  parentTrendId String
+  parentTrend  Trend    @relation(fields: [parentTrendId], references: [id], onDelete: Cascade)
+  
+  name         String
+  description  String   @db.Text
+  keywords     String[] @default([])
+  mentions     Int      @default(0)
+  growth       Float    @default(0) // Growth rate
+  
+  detectedAt   DateTime @default(now())
+  @@index([parentTrendId])
+}
+
+model TrendTag {
+  id           String   @id @default(cuid())
+  trendId      String
+  trend        Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  tag          String
+  category     String   // "industry", "difficulty", "market_size", "timeframe", "risk_level"
+  confidence   Float    @default(0.8) // 0-1 confidence score
+  
+  createdAt    DateTime @default(now())
+
+  @@unique([trendId, tag])
+  @@index([trendId])
+  @@index([category])
+}
+
+// ============ FEATURE 2: Multi-Platform Alert System ============
+
+model AlertConfig {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Notification Channels
+  emailEnabled         Boolean  @default(true)
+  slackEnabled         Boolean  @default(false)
+  slackWebhookUrl      String?
+  webhookEnabled       Boolean  @default(false)
+  webhookUrl           String?
+  
+  // Frequency Options
+  frequency            AlertFrequency @default(REAL_TIME) // real_time, daily_digest, weekly_digest
+  digestHourOfDay      Int? // 0-23 for digest frequency
+  digestDayOfWeek      Int? // 0-6 for weekly digest (0=Sunday)
+  
+  // Notification Preferences
+  mobileNotifications  Boolean  @default(false)
+  inAppNotifications   Boolean  @default(true)
+  
+  // Status
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  rules                AlertRule[]
+  alertHistories       AlertHistory[]
+
+  @@unique([userId])
+  @@index([userId])
+}
+
+enum AlertFrequency {
+  REAL_TIME
+  DAILY_DIGEST
+  WEEKLY_DIGEST
+}
+
+model AlertRule {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  configId             String
+  config               AlertConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  
+  // Rule Configuration
+  name                 String
+  description          String?
+  
+  // Thresholds
+  minOpportunityScore  Float    @default(70)
+  minVelocityThreshold Float    @default(0)
+  
+  // Filters
+  onlyNewTrends        Boolean  @default(false)
+  keywords             String[] @default([])
+  stages               String[] @default([]) // "emerging", "exploding", etc.
+  
+  // Status
+  enabled              Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+  @@index([configId])
+  @@index([enabled])
+}
+
+model AlertHistory {
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  configId             String
+  config               AlertConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  
+  // Alert Details
+  subject              String
+  message              String   @db.Text
+  channel              String   // "email", "slack", "webhook", "in_app"
+  
+  // Related Trend
+  trendId              String?
+  trendsData           Json? // Store trend snapshot
+  
+  // Status Tracking
+  status               AlertDeliveryStatus @default(PENDING)
+  deliveredAt          DateTime?
+  failureReason        String?
+  
+  // Retry Information
+  retryCount           Int      @default(0)
+  nextRetryAt          DateTime?
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  deliveries           AlertDelivery[]
+
+  @@index([userId])
+  @@index([configId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum AlertDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  DELIVERED
+  BOUNCED
+}
+
+model AlertDelivery {
+  id                   String   @id @default(cuid())
+  historyId            String
+  history              AlertHistory @relation(fields: [historyId], references: [id], onDelete: Cascade)
+  
+  // Delivery Details
+  channel              String // "email", "slack", "webhook"
+  recipient            String // Email, Slack webhook URL, or webhook endpoint
+  
+  // Status
+  status               AlertDeliveryStatus @default(PENDING)
+  statusCode           Int?
+  statusMessage        String?
+  
+  // Response Tracking
+  externalId           String? // Message ID from service
+  deliveredAt          DateTime?
+  failureReason        String?
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([historyId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ============ FEATURE 3: Collaborative Workspaces & Collections ============
+
+model Workspace {
+  id                   String   @id @default(cuid())
+  ownerId              String
+  owner                User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Workspace Info
+  name                 String
+  description          String?
+  
+  // Privacy & Billing
+  isPrivate            Boolean  @default(true)
+  stripeCustomerId     String?
+  
+  // Metadata
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  members              WorkspaceMember[]
+  collections          Collection[]
+  activityLogs         WorkspaceActivityLog[]
+
+  @@index([ownerId])
+  @@index([createdAt])
+}
+
+model WorkspaceMember {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Role-Based Access Control
+  role                 WorkspaceRole @default(MEMBER)
+  
+  // Status
+  joinedAt             DateTime @default(now())
+  invitedAt            DateTime?
+  invitedBy            String?
+  
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+enum WorkspaceRole {
+  ADMIN
+  EDITOR
+  MEMBER
+  VIEWER
+}
+
+model Collection {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creatorId            String
+  creator              User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  
+  // Collection Info
+  name                 String
+  description          String?
+  
+  // Sharing & Access
+  isPublic             Boolean  @default(false)
+  shareToken           String?  @unique
+  
+  // Metadata
+  itemCount            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  items                CollectionItem[]
+  comments             CollectionComment[]
+  activityLogs         WorkspaceActivityLog[]
+
+  @@index([workspaceId])
+  @@index([creatorId])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model CollectionItem {
+  id                   String   @id @default(cuid())
+  collectionId         String
+  collection           Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  trendId              String
+  
+  // Item Details
+  trendSnapshot        Json? // Store trend data at time of save
+  notes                String?
+  tags                 String[] @default([])
+  
+  // Status
+  addedAt              DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([collectionId, trendId])
+  @@index([collectionId])
+  @@index([trendId])
+}
+
+model CollectionComment {
+  id                   String   @id @default(cuid())
+  collectionId         String
+  collection           Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Comment Details
+  text                 String   @db.Text
+  
+  // Metadata
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([collectionId])
+  @@index([userId])
+}
+
+model WorkspaceActivityLog {
+  id                   String   @id @default(cuid())
+  workspaceId          String
+  workspace            Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collectionId         String?
+  collection           Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  
+  // Activity Details
+  action               ActivityAction
+  description          String?
+  actorId              String?
+  actorName            String?
+  
+  // Context
+  targetId             String?
+  targetType           String?
+  metadata             Json?
+  
+  createdAt            DateTime @default(now())
+
+  @@index([workspaceId])
+  @@index([collectionId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+enum ActivityAction {
+  WORKSPACE_CREATED
+  WORKSPACE_UPDATED
+  WORKSPACE_DELETED
+  MEMBER_INVITED
+  MEMBER_JOINED
+  MEMBER_ROLE_CHANGED
+  MEMBER_REMOVED
+  COLLECTION_CREATED
+  COLLECTION_UPDATED
+  COLLECTION_DELETED
+  ITEM_ADDED
+  ITEM_REMOVED
+  COMMENT_ADDED
+  COMMENT_UPDATED
+  COMMENT_DELETED
+}
+
+// ============ FEATURE 4: Trend Comparison & Analysis Reports ============
+
+model TrendTimeSeries {
+  id               String   @id @default(cuid())
+  trendId          String
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // Metrics snapshot (aggregated daily)
+  date             DateTime
+  opportunityScore Float    @default(0)
+  velocityGrowth   Float    @default(0)
+  discussionVolume Int      @default(0)
+  positiveSentiment Float    @default(0) // 0-1
+  negativeSentiment Float    @default(0) // 0-1
+  neutralSentiment  Float    @default(0) // 0-1
+  sampleSize       Int      @default(0) // Number of posts analyzed
+  
+  // Derived metrics
+  momentumScore    Float    @default(0) // Rate of change
+  seasonalityIndex Float    @default(0) // Seasonal pattern strength
+  
+  createdAt        DateTime @default(now())
+  
+  @@unique([trendId, date])
+  @@index([trendId, date])
+  @@index([date])
+}
+
+model TrendComparison {
+  id               String   @id @default(cuid())
+  userId           String?
+  
+  // Comparison metadata
+  name             String
+  description      String?
+  
+  // Trends being compared (max 3)
+  trendIds         String[] @default([]) // Array of trend IDs
+  comparisonData   Json? // Store comparison snapshot
+  
+  // Analysis results
+  similarityScore  Float    @default(0) // 0-1 how similar trends are
+  marketPositioning Json? // Competitive positioning data
+  
+  // Lifecycle analysis
+  lifecycleStages  Json? // Detected stage for each trend
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model CohortAnalysis {
+  id               String   @id @default(cuid())
+  trendId          String
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // Cohort definition
+  cohortName       String // e.g., "Early Adopters", "Enterprise", "Startups"
+  cohortType       String // e.g., "user_segment", "industry", "geography"
+  
+  // Engagement metrics
+  engagementScore  Float    @default(0) // 0-1
+  mentionCount     Int      @default(0)
+  averageSentiment Float    @default(0) // -1 to 1
+  
+  // Metadata
+  metadata         Json? // Store cohort definition details
+  createdAt        DateTime @default(now())
+  
+  @@unique([trendId, cohortName])
+  @@index([trendId])
+  @@index([cohortType])
+}
+
+model CompetitiveLandscape {
+  id               String   @id @default(cuid())
+  trendId          String   @unique
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // Similar trends
+  similarTrendIds  String[] @default([])
+  
+  // Market positioning (velocity vs discussion volume)
+  velocityRank     Int      @default(0) // Percentile rank among similar trends
+  discussionRank   Int      @default(0)
+  
+  // Lifecycle detection
+  lifecycleStage   String   @default("emerging") // "emerging", "growth", "mature", "decline"
+  stageConfidence  Float    @default(0.5) // 0-1
+  
+  // Competition analysis
+  competitorCount  Int      @default(0)
+  averageVelocity  Float    @default(0)
+  marketGap        String?  // Identified market gap
+  
+  // Metadata
+  analysisData     Json?
+  updatedAt        DateTime @updatedAt
+  
+  @@index([trendId])
+}
+
+model ReportTemplate {
+  id               String   @id @default(cuid())
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Template info
+  name             String
+  description      String?
+  type             String   @default("custom") // "executive", "technical", "market_analysis", "custom"
+  
+  // Template configuration
+  config           Json // Store template structure (sections, charts, etc.)
+  
+  // Metadata
+  isDefault        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  generatedReports GeneratedReport[]
+  
+  @@index([userId])
+  @@index([type])
+}
+
+model GeneratedReport {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId       String?
+  template         ReportTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  
+  // Report metadata
+  title            String
+  format           String   @default("pdf") // "pdf", "csv", "html"
+  
+  // Report data
+  trendIds         String[] @default([])
+  content          String   @db.Text // For PDF/HTML, JSON for CSV
+  summary          String?  @db.Text
+  insights         Json?
+  
+  // File storage
+  fileUrl          String?
+  fileSize         Int?     // In bytes
+  mimeType         String   @default("application/pdf")
+  
+  // Time period covered
+  startDate        DateTime
+  endDate          DateTime
+  
+  // Metadata
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  scheduledReport  ScheduledReport?
+  
+  @@index([userId])
+  @@index([format])
+  @@index([createdAt])
+}
+
+model ScheduledReport {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Schedule configuration
+  frequency        ReportFrequency @default(WEEKLY)
+  dayOfWeek        Int? // 0-6 (0 = Sunday) for weekly
+  dayOfMonth       Int? // 1-31 for monthly
+  hourOfDay        Int      @default(9) // 0-23
+  
+  // Report configuration
+  templateId       String
+  templateName     String
+  trendFilters     Json? // Filters for which trends to include
+  
+  // Recipient configuration
+  recipientEmails  String[]
+  
+  // Status
+  enabled          Boolean  @default(true)
+  lastSentAt       DateTime?
+  nextSendAt       DateTime?
+  
+  // Tracking
+  totalSent        Int      @default(0)
+  failureCount     Int      @default(0)
+  lastFailureReason String?
+  
+  // Metadata
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  deletedAt        DateTime?
+  
+  generatedReports GeneratedReport[]
+  
+  @@index([userId])
+  @@index([frequency])
+  @@index([enabled])
+  @@index([nextSendAt])
+}
+
+enum ReportFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model CachedInsight {
+  id               String   @id @default(cuid())
+  trendId          String   @unique
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  
+  // Cached data (mirrors TrendInsight)
+  summary          String   @db.Text
+  drivers          String[] @default([])
+  riskLevel        Int      @default(5)
+  industries       String[] @default([])
+  impact           String   @default("MEDIUM")
+  
+  // Sentiment (from latest TrendSentiment)
+  sentiment        Json? // { positiveScore, negativeScore, neutralScore, overallScore }
+  
+  // Tags
+  tags             String[]
+  
+  // Metadata
+  generatedAt      DateTime @default(now())
+  expiresAt        DateTime // 7-day TTL
+  
+  @@index([trendId])
+  @@index([expiresAt])
+}
+
+model UserCohort {
+  id               String   @id @default(cuid())
+  
+  // Cohort characteristics
+  name             String
+  description      String?
+  characteristics  Json // Store cohort definition (e.g., { industry: "SaaS", company_size: "1-10" })
+  
+  // User engagement tracking
+  userCount        Int      @default(0)
+  lastUpdated      DateTime @updatedAt
+  
+  @@index([name])
+}
+
+model TrendCohortInterest {
+  id               String   @id @default(cuid())
+  trendId          String
+  trend            Trend    @relation(fields: [trendId], references: [id], onDelete: Cascade)
+  cohortId         String
+  
+  // Interest metrics
+  interestScore    Float    @default(0) // 0-1
+  engagementCount  Int      @default(0)
+  mentionCount     Int      @default(0)
+  
+  @@unique([trendId, cohortId])
+  @@index([trendId])
+  @@index([cohortId])
+}
+
+// Extend Trend model with relationships to new tables
+// model Trend extends with:
+// - timeseries: TrendTimeSeries[]
+// - comparisons: TrendComparison[] (via trendIds)
+// - cohortAnalysis: CohortAnalysis[]
+// - competitiveLandscape: CompetitiveLandscape?
+// - cachedInsight: CachedInsight?
+// - cohortInterests: TrendCohortInterest[]

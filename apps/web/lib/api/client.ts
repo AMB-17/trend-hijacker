@@ -493,6 +493,87 @@ class ApiClient {
 
     return response.data;
   }
+
+  // ============================================
+  // FEATURE 1: AI-Powered Idea Generator Methods
+  // ============================================
+
+  async generateIdeas(
+    trendId: string,
+    input: {
+      userId: string;
+      numberOfIdeas: number;
+    }
+  ): Promise<any[]> {
+    const response = await this.fetch<{ data: any[] }>(`/api/trends/${encodeURIComponent(trendId)}/generate-ideas`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+
+    return response.data;
+  }
+
+  async getIdeasForTrend(trendId: string, limit = 10): Promise<any[]> {
+    const response = await this.fetch<{ data: any[] }>(
+      `/api/trends/${encodeURIComponent(trendId)}/ideas?limit=${limit}`
+    );
+
+    return response.data;
+  }
+
+  async addIdeaFeedback(
+    trendId: string,
+    ideaId: string,
+    input: {
+      userId: string;
+      rating: number;
+      feedback?: string;
+    }
+  ): Promise<void> {
+    await this.fetch<any>(
+      `/api/trends/${encodeURIComponent(trendId)}/ideas/${encodeURIComponent(ideaId)}/feedback`,
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+      }
+    );
+  }
+
+  // ============================================
+  // FEATURE 5: AI-Powered Insights Methods
+  // ============================================
+
+  async getInsights(trendId: string): Promise<any> {
+    const response = await this.fetch<{ data: any }>(
+      `/api/trends/${encodeURIComponent(trendId)}/insights`
+    );
+
+    return response.data;
+  }
+
+  async getSentiment(trendId: string): Promise<any> {
+    const response = await this.fetch<{ data: any }>(
+      `/api/trends/${encodeURIComponent(trendId)}/sentiment`
+    );
+
+    return response.data;
+  }
+
+  async getTags(trendId: string): Promise<any[]> {
+    const response = await this.fetch<{ data: any[] }>(
+      `/api/trends/${encodeURIComponent(trendId)}/tags`
+    );
+
+    return response.data;
+  }
+
+  async getSubTrends(trendId: string): Promise<any[]> {
+    const response = await this.fetch<{ data: any[] }>(
+      `/api/trends/${encodeURIComponent(trendId)}/sub-trends`
+    );
+
+    return response.data;
+  }
 }
 
 // Export singleton instance
