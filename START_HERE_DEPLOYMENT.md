@@ -269,7 +269,7 @@ open http://localhost:3000
 
 ## 🎉 You're Ready!
 
-Everything is ready for production deployment. Choose your platform and follow the guide:
+Everything is ready for production deployment. Choose your platform and follow the guide: 
 
 - 🚂 **Railway**: [Railway.app Docs](https://docs.railway.app)
 - 🎨 **Render**: [Render Docs](https://render.com/docs)
