@@ -1,6 +1,12 @@
 'use client';
 
 import type { TrendFilters } from '@packages/types';
+import {
+  DEMO_INSIGHTS,
+  DEMO_OPPORTUNITY_MAP,
+  DEMO_TRENDS_EARLY,
+  DEMO_TRENDS_EXPLODING,
+} from '../demo-data';
 
 export interface Trend {
   id: string;
@@ -153,12 +159,14 @@ class ApiClient {
   }
 
   private getSafeCriticalFallback(endpoint: string): unknown {
+    const demoTrends = [...DEMO_TRENDS_EXPLODING, ...DEMO_TRENDS_EARLY];
+
     if (endpoint.startsWith('/api/trends/saved')) {
       return {
         success: true,
-        data: [],
+        data: demoTrends.slice(0, 3),
         meta: {
-          total: 0,
+          total: 3,
           hasMore: false,
           limit: 50,
           offset: 0,
@@ -167,54 +175,79 @@ class ApiClient {
     }
 
     if (endpoint.startsWith('/api/signals/')) {
-      return { success: true, data: [] };
+      if (endpoint.startsWith('/api/signals/early')) {
+        return { success: true, data: DEMO_TRENDS_EARLY.slice(0, 3) };
+      }
+      if (endpoint.startsWith('/api/signals/exploding')) {
+        return { success: true, data: DEMO_TRENDS_EXPLODING.slice(0, 3) };
+      }
+      return { success: true, data: demoTrends.slice(0, 3) };
     }
 
     if (endpoint.startsWith('/api/opportunities/insights')) {
       return {
         success: true,
         data: {
-          topQuickWin: null,
-          topBigBet: null,
-          mostDiscussed: null,
-          fastestGrowing: null,
-          recommendations: [],
+          ...DEMO_INSIGHTS,
         },
       };
     }
 
     if (endpoint.startsWith('/api/opportunities/quick-wins')) {
-      return { success: true, data: [] };
+      return { success: true, data: DEMO_OPPORTUNITY_MAP.quadrants.quickWins };
     }
 
     if (endpoint.startsWith('/api/alerts/evaluate')) {
-      return { success: true, data: [] };
+      return {
+        success: true,
+        data: [
+          {
+            alertId: 'alert-demo-exploding-ai',
+            matchedTrendIds: DEMO_TRENDS_EXPLODING.slice(0, 2).map(item => item.id),
+            matchedCount: 2,
+          },
+        ],
+      };
     }
 
     if (endpoint.startsWith('/api/alerts')) {
-      return { success: true, data: [] };
+      return {
+        success: true,
+        data: [
+          {
+            id: 'alert-demo-exploding-ai',
+            userId: 'demo-user',
+            name: 'Exploding AI Opportunities',
+            rule: {
+              minOpportunityScore: 80,
+              stages: ['exploding'],
+              keywords: ['ai', 'agents'],
+            },
+            channel: 'in_app',
+            enabled: true,
+            createdAt: new Date('2026-03-20T09:00:00.000Z').toISOString(),
+            updatedAt: new Date('2026-03-23T09:00:00.000Z').toISOString(),
+          },
+        ],
+      };
+    }
+
+    if (endpoint.startsWith('/api/users/preferences')) {
+      return {
+        success: true,
+        data: {
+          preferredStages: ['early_signal', 'exploding'],
+          minOpportunityScore: 65,
+          digestCadence: 'daily',
+        },
+      };
     }
 
     if (endpoint.startsWith('/api/opportunities')) {
       return {
         success: true,
         data: {
-          items: [],
-          quadrants: {
-            quickWins: [],
-            bigBets: [],
-            fillIns: [],
-            hardSlogs: [],
-          },
-          summary: {
-            total: 0,
-            byStage: {
-              early_signal: 0,
-              emerging: 0,
-              exploding: 0,
-            },
-            avgOpportunityScore: 0,
-          },
+          ...DEMO_OPPORTUNITY_MAP,
         },
       };
     }
@@ -222,9 +255,9 @@ class ApiClient {
     if (endpoint === '/api/trends' || endpoint.startsWith('/api/trends?')) {
       return {
         success: true,
-        data: [],
+        data: demoTrends,
         meta: {
-          total: 0,
+          total: demoTrends.length,
           hasMore: false,
           limit: 20,
           offset: 0,

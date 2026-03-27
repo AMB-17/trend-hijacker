@@ -15,12 +15,17 @@ export function Input({
   icon,
   className,
   type = 'text',
+  id,
+  name,
   ...props
 }: InputProps) {
+  const resolvedId = id || props['aria-label'] || label?.toLowerCase().replace(/\s+/g, '-') || undefined
+  const resolvedName = name || resolvedId
+
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-foreground mb-2">
+        <label htmlFor={resolvedId} className="block text-sm font-medium text-foreground mb-2">
           {label}
         </label>
       )}
@@ -31,6 +36,8 @@ export function Input({
           </div>
         )}
         <input
+          id={resolvedId}
+          name={resolvedName}
           type={type}
           className={clsx(
             'w-full px-4 py-2 bg-card border border-border rounded-lg',
