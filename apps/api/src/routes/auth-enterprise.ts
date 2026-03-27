@@ -11,7 +11,7 @@ import {
   getClientIpAddress,
   getClientUserAgent,
   AuthenticatedRequest,
-  rateLimitMiddleware,
+  authRateLimitMiddleware,
 } from '../middleware/auth';
 import { logger } from '@packages/utils';
 
@@ -55,12 +55,13 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
    */
   app.post(
     '/oauth/:provider/callback',
-    { preHandler: [rateLimitMiddleware(5, 60000)] },
+    { preHandler: [authRateLimitMiddleware] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
+        const paramProvider = (request.params as any)?.provider;
         const parsed = OAuth2CallbackSchema.safeParse({
-          ...request.body,
-          provider: request.params.provider || (request.body as any)?.provider,
+          ...(request.body as any),
+          provider: paramProvider || (request.body as any)?.provider,
         });
 
         if (!parsed.success) {
@@ -166,7 +167,7 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
    */
   app.post(
     '/saml/acs',
-    { preHandler: [rateLimitMiddleware(10, 60000)] },
+    { preHandler: [authRateLimitMiddleware] },
     async (request: FastifyRequest, reply: FastifyReply) => {
       try {
         const parsed = SAML2ResponseSchema.safeParse(request.body ?? {});
@@ -199,10 +200,10 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
         });
 
         await auditService.logAction(
-          undefined,
+          null,
           'saml_login',
           'session',
-          undefined,
+          null,
           null,
           { relayState: RelayState },
           { ipAddress, userAgent },
@@ -419,11 +420,11 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
           return errorResponse(request, 'Unauthorized', 'UNAUTHORIZED');
         }
 
-        const sessions = await authService.getActiveSessionsForUser(request.userId);
+        const sessions = await authService.getUserSessions(request.userId);
         const stats = await authService.getSessionStatistics(request.userId);
 
         return successResponse({
-          sessions: sessions.map(s => ({
+          sessions: sessions.map((s: any) => ({
             id: s.id,
             deviceName: s.deviceName,
             ipAddress: s.ipAddress?.substring(0, 15), // Anonymize IP
@@ -479,10 +480,10 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
           return errorResponse(request, 'Access denied', 'ACCESS_DENIED');
         }
 
-        await sessionService.deleteSession(sessionId);
+        await authService.deleteSession(sessionId);
 
         await auditService.logAction(
-          request.userId,
+          request.userId || null,
           'session_terminated',
           'session',
           sessionId,
@@ -518,20 +519,20 @@ export default async function authEnterpriseRoutes(app: FastifyInstance) {
           return errorResponse(request, 'Unauthorized', 'UNAUTHORIZED');
         }
 
-        const sessions = await authService.getActiveSessionsForUser(request.userId);
+        const sessions = await authService.getUserSessions(request.userId);
         const currentSessionId = (request as any).sessionId || request.headers['x-session-id'];
 
         for (const session of sessions) {
           if (session.id !== currentSessionId) {
-            await sessionService.deleteSession(session.id);
+            await authService.deleteSession(session.id);
           }
         }
 
         await auditService.logAction(
-          request.userId,
+          request.userId || null,
           'all_other_sessions_terminated',
           'session',
-          undefined,
+          null,
           null,
           { terminatedCount: sessions.length - 1 },
           { ipAddress: getClientIpAddress(request), userAgent: getClientUserAgent(request) },

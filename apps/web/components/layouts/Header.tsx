@@ -21,8 +21,9 @@ export function Header() {
           <nav className="hidden md:flex items-center gap-1">
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/trends">Trends</NavLink>
-            <NavLink href="/early-signals">Early Signals</NavLink>
             <NavLink href="/opportunities">Opportunities</NavLink>
+            <NavLink href="/compare">Compare</NavLink>
+            <NavLink href="/analytics">Analytics</NavLink>
           </nav>
 
           {/* Right side - eventual user menu */}

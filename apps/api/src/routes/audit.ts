@@ -9,9 +9,19 @@ import {
   getClientIpAddress,
   getClientUserAgent,
   AuthenticatedRequest,
-  adminMiddleware,
 } from '../middleware/auth';
 import { logger } from '@packages/utils';
+
+// Simple admin check middleware - can be enhanced
+async function adminMiddleware(request: AuthenticatedRequest, reply: FastifyReply) {
+  // In production, check user role from database
+  const isAdmin = (request as any).userRole === 'admin' || (request as any).user?.role === 'admin';
+  
+  if (!isAdmin) {
+    reply.code(403);
+    return errorResponse(request, 'Admin access required', 'ACCESS_DENIED');
+  }
+}
 
 // Request validation schemas
 const QueryAuditLogsSchema = z.object({
@@ -88,10 +98,10 @@ export default async function auditRoutes(app: FastifyInstance) {
         const { logs, total } = await auditService.queryAuditLogs(filters);
 
         await auditService.logAction(
-          request.userId,
+          request.userId || null,
           'audit_logs_queried',
           'audit_log',
-          undefined,
+          null,
           null,
           { filters },
           { ipAddress: getClientIpAddress(request), userAgent: getClientUserAgent(request) },
@@ -159,10 +169,10 @@ export default async function auditRoutes(app: FastifyInstance) {
         }
 
         await auditService.logAction(
-          request.userId,
+          request.userId || null,
           'audit_logs_exported',
           'audit_log',
-          undefined,
+          null,
           null,
           { format: parsed.data.format, size: exportData.length },
           { ipAddress: getClientIpAddress(request), userAgent: getClientUserAgent(request) },
@@ -217,10 +227,10 @@ export default async function auditRoutes(app: FastifyInstance) {
         );
 
         await auditService.logAction(
-          request.userId,
+          request.userId || null,
           'compliance_report_generated',
           'compliance_report',
-          undefined,
+          null,
           null,
           { framework: parsed.data.framework },
           { ipAddress: getClientIpAddress(request), userAgent: getClientUserAgent(request) },
