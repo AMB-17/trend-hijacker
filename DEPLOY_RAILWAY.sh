@@ -21,7 +21,8 @@ echo ""
 echo "📍 Step 2/5: Initializing Railway project..."
 echo "   → Project name: trend-hijacker"
 echo ""
-cd d:\workspace || exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
 railway init
 
 echo ""

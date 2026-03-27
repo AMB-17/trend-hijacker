@@ -43,22 +43,18 @@ jobs:
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: Type Check
         run: pnpm type-check
-        continue-on-error: true
 
       - name: Build
         run: pnpm build
 
       - name: Run tests
         run: pnpm test
-        continue-on-error: true
 
       - name: Upload coverage
         uses: codecov/codecov-action@v3
-        continue-on-error: true
 
   # 🐳 Build Docker Images
   build-images:
@@ -153,7 +149,6 @@ jobs:
           status: success
           text: '✅ Deployment to Railway succeeded'
           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        continue-on-error: true
 
       - name: Notification Failure
         if: failure()
@@ -162,7 +157,6 @@ jobs:
           status: failure
           text: '❌ Deployment to Railway failed'
           webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-        continue-on-error: true
 
   # 🌐 Deploy Web to Vercel
   deploy-vercel:
@@ -179,7 +173,6 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: apps/web
-        continue-on-error: true
 
   # 📊 Post-Deployment Checks
   post-deployment:
@@ -205,13 +198,11 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-results.sarif'
-        continue-on-error: true
 
       - name: Upload security results
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
-        continue-on-error: true
 
       - name: Summary
         run: |

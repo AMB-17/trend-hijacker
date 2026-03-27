@@ -10,7 +10,14 @@ import { logger } from '@packages/utils';
 const SALT_ROUNDS = 12;
 const TOKEN_LENGTH = 48;
 const SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET || JWT_SECRET.length < 32) {
+  throw new Error(
+    'JWT_SECRET must be set and at least 32 characters long. ' +
+    'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"'
+  );
+}
 
 export interface TokenPayload {
   userId: string;

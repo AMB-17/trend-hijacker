@@ -6,6 +6,8 @@ import { setTimeout as delay } from 'node:timers/promises'
 const port = process.env.PORT || '3000'
 const baseUrl = `http://localhost:${port}`
 const healthUrl = `${baseUrl}/health`
+const workspaceRoot = process.env.WORKSPACE_ROOT || process.cwd()
+const webAppDir = process.env.WEB_APP_DIR || `${workspaceRoot}\\apps\\web`
 
 let child = null
 
@@ -20,7 +22,7 @@ async function readHealth() {
 
 function spawnDevServer() {
   child = spawn(process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm', ['dev'], {
-    cwd: 'D:\\workspace\\apps\\web',
+    cwd: webAppDir,
     env: {
       ...process.env,
       PORT: port,

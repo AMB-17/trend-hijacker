@@ -28,23 +28,19 @@ jobs:
 
       - name: Run Linter
         run: pnpm lint
-        continue-on-error: true
 
       - name: Type Check
         run: pnpm type-check
-        continue-on-error: true
 
       - name: Run Tests
         run: pnpm test
-        continue-on-error: true
 
       - name: Build Check
         run: pnpm build
-        continue-on-error: true
 
       - name: Comment PR
         uses: actions/github-script@v6
-        if: always()
+        if: success()
         with:
           script: |
             const body = `## ✅ Quality Checks

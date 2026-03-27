@@ -30,7 +30,7 @@ REM Step 2: Initialize Project
 echo 📍 Step 2/5: Initializing Railway project...
 echo    → Project name: trend-hijacker
 echo.
-cd /d d:\workspace
+cd /d "%~dp0"
 call railway init
 if errorlevel 1 (
     echo ⚠️  Railway init returned an error. Continuing...
