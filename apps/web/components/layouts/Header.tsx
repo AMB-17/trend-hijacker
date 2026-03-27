@@ -18,23 +18,21 @@ export function Header() {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex lg:hidden items-center gap-1">
+          <nav className="flex-1 mx-3 flex items-center gap-1 overflow-x-auto">
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/trends">Trends</NavLink>
+            <NavLink href="/early-signals">Early Signals</NavLink>
             <NavLink href="/opportunities">Opportunities</NavLink>
             <NavLink href="/analyzer">Analyzer</NavLink>
             <NavLink href="/compare">Compare</NavLink>
             <NavLink href="/analytics">Analytics</NavLink>
             <NavLink href="/alerts">Alerts</NavLink>
+            <NavLink href="/settings">Settings</NavLink>
           </nav>
 
           {/* Right side - eventual user menu */}
-          <div className="flex items-center gap-2">
-            <IconLink href="/alerts" icon="🔔" label="Alerts" />
-            <IconLink href="/settings" icon="⚙️" label="Settings" />
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-              <span className="text-sm font-bold text-primary">U</span>
-            </div>
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center ml-2 shrink-0">
+            <span className="text-sm font-bold text-primary">U</span>
           </div>
         </div>
       </div>
@@ -50,10 +48,10 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
     <Link
       href={href}
       className={clsx(
-        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+        'px-3 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap shrink-0',
         isActive
           ? 'text-primary bg-primary/10'
-          : 'text-muted hover:text-foreground hover:bg-card/50'
+          : 'text-foreground/80 hover:text-foreground hover:bg-card/50'
       )}
     >
       {children}
@@ -61,23 +59,3 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   );
 }
 
-function IconLink({ href, icon, label }: { href: string; icon: string; label: string }) {
-  const pathname = usePathname();
-  const isActive = (pathname ?? '').startsWith(href);
-
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      title={label}
-      className={clsx(
-        'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
-        isActive
-          ? 'text-primary bg-primary/10'
-          : 'text-muted hover:text-foreground hover:bg-card/50'
-      )}
-    >
-      <span aria-hidden="true">{icon}</span>
-    </Link>
-  );
-}
