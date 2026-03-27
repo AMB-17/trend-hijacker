@@ -4,8 +4,6 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useTrendById } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, Button, Badge, StatusBadge, OpportunityScore, MomentumChart, VelocityIndicator } from '@/components/ui';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 import { DEMO_USER_ID } from '@/lib/user-context';
 
@@ -57,13 +55,6 @@ export default function TrendDetailPage() {
   if (error) {
     return (
       <div className="space-y-6 pb-8">
-        <Link href="/trends">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Trends
-          </Button>
-        </Link>
-
         <Card>
           <CardBody className="text-center py-12">
             <p className="text-danger mb-4 text-lg">{error}</p>
@@ -135,14 +126,6 @@ export default function TrendDetailPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Back Button */}
-      <Link href="/trends">
-        <Button variant="ghost" size="sm" className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Trends
-        </Button>
-      </Link>
-
       {/* Header Section */}
       <Card>
         <CardHeader>
@@ -363,6 +346,48 @@ export default function TrendDetailPage() {
           </CardBody>
         </Card>
       )}
+
+      {/* Project Rating / Research Section */}
+      <Card>
+        <CardHeader>
+          <h3 className="font-semibold text-foreground">Research & Rate Project</h3>
+          <p className="text-sm text-muted mt-1">Search the internet for more context or rate a related project</p>
+        </CardHeader>
+        <CardBody className="space-y-4">
+          <div className="flex gap-2">
+            <input 
+              type="url" 
+              placeholder="Enter Website or GitHub Repo URL to rate..." 
+              className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
+              id="project-url-input"
+            />
+            <Button onClick={() => {
+              const el = document.getElementById('project-url-input') as HTMLInputElement;
+              if (el?.value) {
+                alert('Project rating submitted for: ' + el.value);
+              }
+            }}>Rate Project</Button>
+          </div>
+          
+          <div className="pt-4 border-t border-border mt-4">
+            <h4 className="text-sm font-medium mb-3">Widen the Search on the Internet:</h4>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => window.open('https://duckduckgo.com/?q=' + encodeURIComponent(trend.title + ' trending tech'), '_blank')}
+              >
+                Search Internet
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => window.open('https://github.com/search?q=' + encodeURIComponent(trend.title) + '&type=repositories', '_blank')}
+              >
+                Search Source Code (GitHub)
+              </Button>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       {/* Meta Information */}
       <Card>

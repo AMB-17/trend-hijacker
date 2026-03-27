@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useAlertMatches, useTrends } from '@/lib/hooks';
-import { Card, CardBody, Button, Input, SkeletonGrid } from '@/components/ui';
+import { Card, CardBody, CardHeader, Button, Input, SkeletonGrid } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
 import type { TrendFilters } from '@packages/types';
 import { Search } from 'lucide-react';
@@ -76,24 +76,29 @@ export default function EarlySignalsPage() {
         </CardBody>
       </Card>
 
-      {/* Filters */}
-      <Card>
-        <CardBody className="space-y-4">
-          {/* Search */}
-          <div>
-            <Input
-              placeholder="Search early signals..."
-              icon={<Search className="w-4 h-4" />}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Sort */}
-          <div>
-            <p className="text-sm text-muted mb-2 font-medium">Sort By</p>
-            <div className="flex gap-2 flex-wrap">
-              {['score', 'date', 'velocity', 'volume'].map((sort) => (
+        {/* Global Search and Research */}
+        <Card>
+          <CardHeader>
+            <h3 className="font-semibold text-foreground">Discover More Early Signals</h3>
+            <p className="text-sm text-muted mt-1">Search the wider internet for new trends</p>
+          </CardHeader>
+          <CardBody className="space-y-4">
+            <div className="flex gap-2">
+              <input 
+                type="url" 
+                placeholder="Enter Website, Source, or GitHub Repo URL to rate or analyze..." 
+                className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
+                id="global-project-url-input"
+              />
+              <Button onClick={() => {
+                const el = document.getElementById('global-project-url-input') as HTMLInputElement;
+                if (el?.value) {
+                  alert('Analysis requested for source: ' + el.value);
+                }
+              }}>Analyze Source</Button>
+            </div>
+          </CardBody>
+        </Card>
                 <Button
                   key={sort}
                   onClick={() => handleSortChange(sort)}
