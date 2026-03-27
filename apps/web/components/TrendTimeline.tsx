@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {
   LineChart,
   Line,
@@ -15,7 +15,7 @@ import {
   ComposedChart,
 } from 'recharts';
 import { Card, CardBody, CardHeader } from '@/components/ui';
-import { TrendingUp, Activity, Target } from 'lucide-react';
+import { TrendingUp, Activity, AlertCircle } from 'lucide-react';
 
 interface TimelineData {
   timestamp: string;
@@ -31,10 +31,14 @@ interface TrendTimelineProps {
 }
 
 export function TrendTimeline({ trend, metrics = [] }: TrendTimelineProps) {
-  // Generate simulated historical data if metrics not provided
-  const data = useMemo(() => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(!metrics || metrics.length === 0);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
     if (metrics && metrics.length > 0) {
-      return metrics.map((m) => ({
+      // Use provided metrics
+      const transformed = metrics.map((m) => ({
         date: new Date(m.timestamp).toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
@@ -42,46 +46,81 @@ export function TrendTimeline({ trend, metrics = [] }: TrendTimelineProps) {
         mentions: m.mention_count,
         velocity: Math.round(m.velocity * 100) / 100,
         acceleration: Math.round(m.acceleration * 100) / 100,
-        sentiment: Math.round((m.sentiment_avg + 1) * 50), // Convert -1 to 1 scale to 0-100
+        sentiment: Math.round((m.sentiment_avg + 1) * 50),
       }));
+      setData(transformed);
+      setLoading(false);
+      return;
     }
 
-    // Generate 30 days of simulated data for demo
-    const generated = [];
-    const today = new Date();
-    const growthRate = trend.velocityScore || 1.5;
+    // Fetch real data from API
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch(`/api/trends/${trend.id}/timeseries?period=30d`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch trend history');
+        }
 
-    for (let i = 29; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
+        const result = await response.json();
+        
+        if (result.success && result.data?.data && Array.isArray(result.data.data)) {
+          setData(result.data.data);
+        } else {
+          setError('No historical data available');
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load trend history');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      const baseVelocity = 0.5 + Math.random() * 0.5;
-      const mentions = Math.floor(
-        (trend.discussionCount || 100) *
-          (Math.pow(growthRate, i / 30) * (0.5 + Math.random() * 0.5))
-      );
-      const sentiment = 50 + Math.sin(i / 10) * 20 + (Math.random() - 0.5) * 10;
+    fetchData();
+  }, [trend.id, metrics]);
 
-      generated.push({
-        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        mentions: Math.max(mentions, 0),
-        velocity: baseVelocity + Math.sin(i / 5) * 0.3,
-        acceleration: (Math.random() - 0.5) * 0.5,
-        sentiment: Math.max(20, Math.min(80, sentiment)),
-      });
-    }
+  if (error) {
+    return (
+      <Card>
+        <CardBody className="py-8 text-center space-y-2">
+          <AlertCircle className="w-8 h-8 text-warning mx-auto" />
+          <p className="text-muted">{error}</p>
+          <p className="text-xs text-muted">Timeline data will be available as trend data accumulates</p>
+        </CardBody>
+      </Card>
+    );
+  }
 
-    return generated;
-  }, [metrics, trend]);
+  if (loading) {
+    return (
+      <Card>
+        <CardBody className="py-12 text-center">
+          <p className="text-muted">Loading trend history...</p>
+        </CardBody>
+      </Card>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <Card>
+        <CardBody className="py-12 text-center">
+          <p className="text-muted">Trend data not yet available</p>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Discussion Volume Timeline */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Activity className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-foreground">Discussion Volume Over Time</h3>
+            <h3 className="font-semibold text-foreground">Discussion Volume Trend</h3>
           </div>
         </CardHeader>
         <CardBody>
@@ -127,7 +166,7 @@ export function TrendTimeline({ trend, metrics = [] }: TrendTimelineProps) {
         <CardHeader>
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-success" />
-            <h3 className="font-semibold text-foreground">Velocity & Sentiment Trend</h3>
+            <h3 className="font-semibold text-foreground">Growth Velocity & Community Sentiment</h3>
           </div>
         </CardHeader>
         <CardBody>
@@ -136,7 +175,8 @@ export function TrendTimeline({ trend, metrics = [] }: TrendTimelineProps) {
               <ComposedChart data={data}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="date" stroke="#999" />
-                <YAxis stroke="#999" />
+                <YAxis stroke="#999" yAxisId="left" label={{ value: 'Velocity', angle: -90, position: 'insideLeft' }} />
+                <YAxis stroke="#999" yAxisId="right" orientation="right" label={{ value: 'Sentiment %', angle: 90, position: 'insideRight' }} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: '#222',
@@ -150,19 +190,21 @@ export function TrendTimeline({ trend, metrics = [] }: TrendTimelineProps) {
                 />
                 <Legend />
                 <Line
+                  yAxisId="left"
                   type="monotone"
                   dataKey="velocity"
                   stroke="#22c55e"
                   strokeWidth={2}
-                  name="Velocity"
+                  name="Growth Velocity"
                   dot={false}
                 />
                 <Line
+                  yAxisId="right"
                   type="monotone"
                   dataKey="sentiment"
                   stroke="#f59e0b"
                   strokeWidth={2}
-                  name="Sentiment (0-100)"
+                  name="Community Sentiment"
                   dot={false}
                 />
               </ComposedChart>

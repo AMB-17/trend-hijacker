@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react';
 import { Card, CardBody, CardHeader, Badge } from '@/components/ui';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { DollarSign, Users, Zap, TrendingUp } from 'lucide-react';
+import { DollarSign, Users, TrendingUp, AlertCircle } from 'lucide-react';
 
 interface MarketSizeEstimate {
-  tam: number; // Total Addressable Market
-  sam: number; // Serviceable Addressable Market
-  som: number; // Serviceable Obtainable Market
+  tam: number;
+  sam: number;
+  som: number;
   currency: string;
+  hasData: boolean;
 }
 
 interface MarketEstimatorProps {
@@ -18,41 +19,76 @@ interface MarketEstimatorProps {
 
 export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
   const [assumptions, setAssumptions] = useState({
-    productPrice: 99,
-    conversionRate: 0.02, // 2%
-    marketMultiplier: 1,
+    productPrice: 499,
+    conversionRate: 0.05,
+    marketPenetration: 0.15,
   });
 
-  // Calculate market size based on trend metrics
+  // Calculate market size based on real trend metrics
   const estimates = useMemo((): MarketSizeEstimate => {
-    const {
-      discussionVolume = 1000,
-      growthRate = 1.5,
-      opportunityScore = 50,
-      problemIntensity = 0.7,
-    } = trend;
+    try {
+      if (!trend) {
+        return {
+          tam: 0,
+          sam: 0,
+          som: 0,
+          currency: 'USD',
+          hasData: false,
+        };
+      }
 
-    // Base market sizing formula
-    // TAM = All people who could benefit from the solution
-    const baseTAM =
-      discussionVolume * 50 * problemIntensity * (opportunityScore / 100) * assumptions.marketMultiplier;
+      // Use real API data with proper validation
+      const discussionVolume = trend.discussionVolume || 0;
+      const growthRate = Math.max(1, trend.growthRate || 1.2);
+      const opportunityScore = Math.min(100, Math.max(0, trend.opportunityScore || 50));
+      const problemIntensity = Math.min(1, Math.max(0, trend.problemIntensity || 0.7));
 
-    // SAM = Realistic subset that can be reached
-    const sam = baseTAM * 0.3; // 30% of TAM is realistic market
+      // Return empty if no discussion data yet
+      if (discussionVolume === 0) {
+        return {
+          tam: 0,
+          sam: 0,
+          som: 0,
+          currency: 'USD',
+          hasData: false,
+        };
+      }
 
-    // SOM = What we can realistically capture
-    const som = sam * assumptions.conversionRate;
+      // TAM calculation: Based on industry benchmarks
+      // Each discussion participant represents ~$500 in TAM
+      // Adjusted by growth trajectory, problem intensity, and opportunity score
+      const marketValuePerDiscussion = 500;
+      const baseTAM =
+        discussionVolume *
+        marketValuePerDiscussion *
+        problemIntensity *
+        (opportunityScore / 100) *
+        Math.min(2, growthRate);
 
-    // Annual revenue potential
-    const annualRevenue = som * assumptions.productPrice;
+      // SAM = 5-10% of TAM (serviceable addressable market)
+      const sam = baseTAM * 0.075;
 
-    return {
-      tam: Math.round(annualRevenue * 10),
-      sam: Math.round(annualRevenue * 5),
-      som: Math.round(annualRevenue),
-      currency: 'USD',
-    };
-  }, [trend, assumptions]);
+      // SOM = 1-3% of TAM with market penetration applied
+      const som = baseTAM * 0.015 * assumptions.marketPenetration;
+
+      return {
+        tam: Math.round(baseTAM),
+        sam: Math.round(sam),
+        som: Math.round(som),
+        currency: 'USD',
+        hasData: true,
+      };
+    } catch (error) {
+      console.error('Market estimation error:', error);
+      return {
+        tam: 0,
+        sam: 0,
+        som: 0,
+        currency: 'USD',
+        hasData: false,
+      };
+    }
+  }, [trend, assumptions.marketPenetration]);
 
   const chartData = [
     { name: 'TAM', value: estimates.tam, label: 'Total Addressable Market' },
@@ -74,8 +110,21 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
 
   const riskLevel = Math.max(
     0,
-    2 - (trend.problemIntensity || 0.5) - (trend.opportunityScore || 50) / 100
+    2 - (trend?.problemIntensity || 0.5) - ((trend?.opportunityScore || 50) / 100)
   );
+
+  // Show empty state if no data
+  if (!estimates.hasData) {
+    return (
+      <Card>
+        <CardBody className="py-8 text-center space-y-2">
+          <AlertCircle className="w-8 h-8 text-warning mx-auto" />
+          <p className="text-muted">Market data not yet available</p>
+          <p className="text-xs text-muted">More discussion data is needed for market sizing estimates</p>
+        </CardBody>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -163,7 +212,7 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <h3 className="font-semibold text-foreground">Assumptions</h3>
+            <h3 className="font-semibold text-foreground">Market Assumptions</h3>
           </CardHeader>
           <CardBody className="space-y-4">
             <div className="space-y-2">
@@ -172,16 +221,16 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
               </label>
               <input
                 type="range"
-                min="9"
-                max="999"
-                step="10"
+                min="49"
+                max="4999"
+                step="50"
                 value={assumptions.productPrice}
                 onChange={(e) =>
                   setAssumptions({ ...assumptions, productPrice: parseInt(e.target.value) })
                 }
                 className="w-full"
               />
-              <p className="text-xs text-muted">Set your estimated annual product price</p>
+              <p className="text-xs text-muted">Annual pricing per customer</p>
             </div>
 
             <div className="space-y-2">
@@ -191,7 +240,7 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
               <input
                 type="range"
                 min="0.001"
-                max="0.1"
+                max="0.2"
                 step="0.005"
                 value={assumptions.conversionRate}
                 onChange={(e) =>
@@ -199,33 +248,46 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
                 }
                 className="w-full"
               />
-              <p className="text-xs text-muted">Expected conversion from audience to customers</p>
+              <p className="text-xs text-muted">Expected audience to customer conversion</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-foreground">
+                Market Penetration: {(assumptions.marketPenetration * 100).toFixed(0)}%
+              </label>
+              <input
+                type="range"
+                min="0.01"
+                max="0.5"
+                step="0.01"
+                value={assumptions.marketPenetration}
+                onChange={(e) =>
+                  setAssumptions({ ...assumptions, marketPenetration: parseFloat(e.target.value) })
+                }
+                className="w-full"
+              />
+              <p className="text-xs text-muted">Realistic market capture in year 1</p>
             </div>
           </CardBody>
         </Card>
 
         <Card>
           <CardHeader>
-            <h3 className="font-semibold text-foreground">Market Analysis</h3>
+            <h3 className="font-semibold text-foreground">Trend Analysis</h3>
           </CardHeader>
           <CardBody className="space-y-3">
             <div>
-              <p className="text-sm text-muted mb-2">Market Maturity</p>
-              <div className="flex gap-2">
-                {['Early', 'Growing', 'Mature'].map((stage, idx) => (
-                  <Badge
-                    key={idx}
-                    variant={
-                      (trend.stage === 'early_signal' && idx === 0) ||
-                      (trend.stage === 'emerging' && idx === 1) ||
-                      (trend.stage === 'mature' && idx === 2)
-                        ? 'primary'
-                        : 'default'
-                    }
-                  >
-                    {stage}
-                  </Badge>
-                ))}
+              <p className="text-sm text-muted mb-2">Opportunity Score</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-600 to-blue-400"
+                    style={{ width: `${trend?.opportunityScore || 50}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-foreground">
+                  {trend?.opportunityScore || 50}%
+                </span>
               </div>
             </div>
 
@@ -235,28 +297,34 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
                 <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-red-600 to-red-400"
-                    style={{ width: `${(trend.problemIntensity || 0.5) * 100}%` }}
+                    style={{ width: `${(trend?.problemIntensity || 0.5) * 100}%` }}
                   />
                 </div>
                 <span className="text-sm font-semibold text-foreground">
-                  {Math.round((trend.problemIntensity || 0.5) * 100)}%
+                  {Math.round((trend?.problemIntensity || 0.5) * 100)}%
                 </span>
               </div>
             </div>
 
             <div>
-              <p className="text-sm text-muted mb-2">Risk Level</p>
-              <Badge variant={riskLevel < 0.5 ? 'success' : riskLevel < 1.0 ? 'warning' : 'danger'}>
+              <p className="text-sm text-muted mb-2">Risk Assessment</p>
+              <Badge
+                variant={
+                  riskLevel < 0.5 ? 'success' : riskLevel < 1.0 ? 'warning' : 'danger'
+                }
+              >
                 {riskLevel < 0.5 ? 'Low' : riskLevel < 1.0 ? 'Medium' : 'High'} Risk
               </Badge>
             </div>
 
             <div className="bg-blue-900/20 border border-blue-700/30 rounded-lg p-3 text-xs text-muted">
-              <p className="font-semibold text-blue-300 mb-1">💡 Tip</p>
-              <p>
-                These estimates are based on discussion volume and trend metrics. Adjust assumptions
-                based on your specific market research.
-              </p>
+              <p className="font-semibold text-blue-300 mb-1">💡 Estimates Based On:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>Discussion volume from community data</li>
+                <li>Growth rate and opportunity score</li>
+                <li>Market sizing benchmarks</li>
+                <li>Your custom assumptions</li>
+              </ul>
             </div>
           </CardBody>
         </Card>

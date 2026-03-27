@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
     averageVelocity:
       savedTrends && savedTrends.length > 0
         ? (
-            savedTrends.reduce((sum: number, t: any) => sum + (t.velocityScore || 0), 0) /
+            savedTrends.reduce((sum: number, t: any) => sum + (t.growthRate || 0), 0) /
             savedTrends.length
           ).toFixed(2)
         : '0.00',
@@ -265,3 +265,4 @@ export default function AnalyticsPage() {
     </div>
   );
 }
+
