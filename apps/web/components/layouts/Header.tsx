@@ -25,11 +25,16 @@ export function Header() {
             <NavLink href="/analyzer">Analyzer</NavLink>
             <NavLink href="/compare">Compare</NavLink>
             <NavLink href="/analytics">Analytics</NavLink>
+            <NavLink href="/alerts">Alerts</NavLink>
           </nav>
 
           {/* Right side - eventual user menu */}
-          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="text-sm font-bold text-primary">U</span>
+          <div className="flex items-center gap-2">
+            <IconLink href="/alerts" icon="🔔" label="Alerts" />
+            <IconLink href="/settings" icon="⚙️" label="Settings" />
+            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+              <span className="text-sm font-bold text-primary">U</span>
+            </div>
           </div>
         </div>
       </div>
@@ -52,6 +57,27 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
       )}
     >
       {children}
+    </Link>
+  );
+}
+
+function IconLink({ href, icon, label }: { href: string; icon: string; label: string }) {
+  const pathname = usePathname();
+  const isActive = (pathname ?? '').startsWith(href);
+
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      title={label}
+      className={clsx(
+        'h-8 w-8 rounded-lg flex items-center justify-center transition-colors',
+        isActive
+          ? 'text-primary bg-primary/10'
+          : 'text-muted hover:text-foreground hover:bg-card/50'
+      )}
+    >
+      <span aria-hidden="true">{icon}</span>
     </Link>
   );
 }
