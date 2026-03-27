@@ -21,7 +21,8 @@ interface SelectedTrend {
 
 export default function ComparePage() {
   const userId = DEMO_USER_ID;
-  const { data: trends, loading } = useTrends({ limit: 100, userId });
+  const trendFilters = useMemo(() => ({ limit: 100, userId }), [userId]);
+  const { data: trends, loading } = useTrends(trendFilters);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTrends, setSelectedTrends] = useState<SelectedTrend[]>([]);
 

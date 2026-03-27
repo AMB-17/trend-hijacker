@@ -11,8 +11,8 @@ import { DEMO_USER_ID } from '@/lib/user-context';
 
 export default function AnalyticsPage() {
   const userId = DEMO_USER_ID;
-  const { data: savedTrends, loading, error, refetch } = useSavedTrends(userId) || {
-    data: [],
+  const { trends: savedTrends, loading, error, refetch } = useSavedTrends(userId) || {
+    trends: [],
     loading: false,
     error: null,
     refetch: () => {},

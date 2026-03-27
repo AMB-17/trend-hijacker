@@ -152,6 +152,19 @@ class ApiClient {
   }
 
   private getSafeCriticalFallback(endpoint: string): unknown {
+    if (endpoint.startsWith('/api/trends/saved')) {
+      return {
+        success: true,
+        data: [],
+        meta: {
+          total: 0,
+          hasMore: false,
+          limit: 50,
+          offset: 0,
+        },
+      };
+    }
+
     if (endpoint.startsWith('/api/signals/')) {
       return { success: true, data: [] };
     }

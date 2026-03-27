@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
+const UPSTREAM_TIMEOUT_MS = 8000
+
 export function normalizeApiUrl(value?: string): string {
   const candidate = value?.trim()
   if (!candidate) {
@@ -79,13 +81,21 @@ async function readProxyResponse(response: Response, res: NextApiResponse) {
 }
 
 async function proxyFetch(targetUrl: string, req: NextApiRequest, res: NextApiResponse) {
-  const response = await fetch(targetUrl, {
-    method: req.method,
-    headers: buildForwardHeaders(req),
-    body: req.body ? JSON.stringify(req.body) : undefined,
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
 
-  return readProxyResponse(response, res)
+  try {
+    const response = await fetch(targetUrl, {
+      method: req.method,
+      headers: buildForwardHeaders(req),
+      body: req.body ? JSON.stringify(req.body) : undefined,
+      signal: controller.signal,
+    })
+
+    return readProxyResponse(response, res)
+  } finally {
+    clearTimeout(timeout)
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -119,11 +129,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const targetUrl = `${apiUrl}/${pathParts.join('/')}${queryString}`
 
   try {
-    const response = await fetch(targetUrl, {
-      method: req.method,
-      headers: buildForwardHeaders(req),
-      body: req.body ? JSON.stringify(req.body) : undefined,
-    })
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS)
+
+    let response: Response
+    try {
+      response = await fetch(targetUrl, {
+        method: req.method,
+        headers: buildForwardHeaders(req),
+        body: req.body ? JSON.stringify(req.body) : undefined,
+        signal: controller.signal,
+      })
+    } finally {
+      clearTimeout(timeout)
+    }
 
     if (!response.ok && shouldTryLocalFallback(pathParts)) {
       return proxyFetch(localTargetUrl, req, res)
