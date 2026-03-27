@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { removeSavedTrend } from '../../_demo-store'
+import { removeSavedTrend } from '../../../../lib/server/demo-store'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {

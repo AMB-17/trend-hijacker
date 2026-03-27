@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getPreferences, updatePreferences } from '../_demo-store'
+import { getPreferences, updatePreferences } from '../../../lib/server/demo-store'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
@@ -42,3 +42,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ success: false, error: { message: 'Method Not Allowed' } })
 }
+

@@ -347,29 +347,14 @@ export default function TrendDetailPage() {
         </Card>
       )}
 
-      {/* Project Rating / Research Section */}
+      {/* Research Section */}
       <Card>
         <CardHeader>
-          <h3 className="font-semibold text-foreground">Research & Rate Project</h3>
-          <p className="text-sm text-muted mt-1">Search the internet for more context or rate a related project</p>
+          <h3 className="font-semibold text-foreground">Deep Dive Research</h3>
+          <p className="text-sm text-muted mt-1">Search the internet for more context on this trend</p>
         </CardHeader>
         <CardBody className="space-y-4">
-          <div className="flex gap-2">
-            <input 
-              type="url" 
-              placeholder="Enter Website or GitHub Repo URL to rate..." 
-              className="flex-1 px-3 py-2 bg-background border border-border rounded-md text-sm"
-              id="project-url-input"
-            />
-            <Button onClick={() => {
-              const el = document.getElementById('project-url-input') as HTMLInputElement;
-              if (el?.value) {
-                alert('Project rating submitted for: ' + el.value);
-              }
-            }}>Rate Project</Button>
-          </div>
-          
-          <div className="pt-4 border-t border-border mt-4">
+          <div className="pt-0 mt-0">
             <h4 className="text-sm font-medium mb-3">Widen the Search on the Internet:</h4>
             <div className="flex flex-wrap gap-2">
               <Button 

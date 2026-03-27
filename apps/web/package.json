@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:checked": "node ../../scripts/web-runtime-check.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

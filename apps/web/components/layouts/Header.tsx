@@ -18,10 +18,11 @@ export function Header() {
           </Link>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex lg:hidden items-center gap-1">
             <NavLink href="/dashboard">Dashboard</NavLink>
             <NavLink href="/trends">Trends</NavLink>
             <NavLink href="/opportunities">Opportunities</NavLink>
+            <NavLink href="/analyzer">Analyzer</NavLink>
             <NavLink href="/compare">Compare</NavLink>
             <NavLink href="/analytics">Analytics</NavLink>
           </nav>

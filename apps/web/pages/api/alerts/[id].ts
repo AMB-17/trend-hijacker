@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { deleteAlert, updateAlert } from '../_demo-store'
+import { deleteAlert, updateAlert } from '../../../lib/server/demo-store'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const idParam = Array.isArray(req.query.id) ? req.query.id[0] : req.query.id

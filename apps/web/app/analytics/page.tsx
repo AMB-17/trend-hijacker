@@ -101,6 +101,9 @@ export default function AnalyticsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-muted" />
                 <Input
+                  id="analytics-search"
+                  name="analytics-search"
+                  label="Search saved trends"
                   type="text"
                   placeholder="Search trends..."
                   value={searchQuery}

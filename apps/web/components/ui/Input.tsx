@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 import { clsx } from 'clsx';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -19,7 +19,13 @@ export function Input({
   name,
   ...props
 }: InputProps) {
-  const resolvedId = id || props['aria-label'] || label?.toLowerCase().replace(/\s+/g, '-') || undefined
+  const generatedId = useId();
+  const resolvedId =
+    id ||
+    props['aria-label'] ||
+    label?.toLowerCase().replace(/\s+/g, '-') ||
+    props.placeholder?.toLowerCase().replace(/[^a-z0-9]+/g, '-') ||
+    generatedId;
   const resolvedName = name || resolvedId
 
   return (

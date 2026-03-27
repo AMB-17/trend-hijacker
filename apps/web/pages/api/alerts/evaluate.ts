@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { evaluateAlerts } from '../_demo-store'
+import { evaluateAlerts } from '../../../lib/server/demo-store'
 
 function parseLimit(value: unknown, fallback: number): number {
   const raw = Array.isArray(value) ? value[0] : value
@@ -31,3 +31,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     },
   })
 }
+

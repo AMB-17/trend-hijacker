@@ -74,4 +74,44 @@ describe("alerts routes", () => {
 
     await app.close();
   });
+
+  it("updates alert enabled status", async () => {
+    const app = Fastify();
+    await app.register(alertsRoutes, { prefix: "/api/alerts" });
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/alerts/a1",
+      payload: {
+        userId: "u1",
+        enabled: false,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({ success: true });
+
+    await app.close();
+  });
+
+  it("deletes alert", async () => {
+    const app = Fastify();
+    await app.register(alertsRoutes, { prefix: "/api/alerts" });
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/alerts/a1?userId=u1",
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: true,
+      data: {
+        id: "a1",
+        deleted: true,
+      },
+    });
+
+    await app.close();
+  });
 });

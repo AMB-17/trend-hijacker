@@ -9,6 +9,7 @@ const sidebarLinks = [
   { href: '/trends', label: 'Trends', icon: '📈' },
   { href: '/early-signals', label: 'Early Signals', icon: '⚡' },
   { href: '/opportunities', label: 'Opportunities', icon: '🎯' },
+  { href: '/analyzer', label: 'Analyzer', icon: '🔍' },
   { href: '/compare', label: 'Compare', icon: '🆚' },
   { href: '/analytics', label: 'Analytics', icon: '📉' },
   { href: '/alerts', label: 'Alerts', icon: '🔔' },

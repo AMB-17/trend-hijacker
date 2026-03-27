@@ -89,6 +89,9 @@ export default function TrendsPage() {
           {/* Search */}
           <div>
             <Input
+              id="trends-search"
+              name="trends-search"
+              label="Search trends"
               placeholder="Search trends..."
               icon={<Search className="w-4 h-4" />}
               value={searchQuery}

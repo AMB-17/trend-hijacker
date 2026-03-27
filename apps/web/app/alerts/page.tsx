@@ -66,7 +66,14 @@ export default function AlertsPage() {
           <h2 className="text-xl font-semibold text-foreground">Alert Context</h2>
         </CardHeader>
         <CardBody className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input value={userId} onChange={e => setUserId(e.target.value)} placeholder="User ID" />
+          <Input
+            id="alerts-user-id"
+            name="alerts-user-id"
+            label="User ID"
+            value={userId}
+            onChange={e => setUserId(e.target.value)}
+            placeholder="User ID"
+          />
           <Button variant="outline" onClick={() => refetch()}>
             Reload Alerts
           </Button>
@@ -93,14 +100,27 @@ export default function AlertsPage() {
           <h2 className="text-xl font-semibold text-foreground">Create Alert</h2>
         </CardHeader>
         <CardBody className="space-y-4">
-          <Input value={name} onChange={e => setName(e.target.value)} placeholder="Alert name" />
           <Input
+            id="alert-name"
+            name="alert-name"
+            label="Alert name"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            placeholder="Alert name"
+          />
+          <Input
+            id="alert-min-score"
+            name="alert-min-score"
+            label="Minimum opportunity score"
             type="number"
             value={minScore}
             onChange={e => setMinScore(Number(e.target.value || 0))}
             placeholder="Minimum opportunity score"
           />
           <Input
+            id="alert-keywords"
+            name="alert-keywords"
+            label="Keywords (comma separated)"
             value={keywordInput}
             onChange={e => setKeywordInput(e.target.value)}
             placeholder="Keywords (comma separated)"
@@ -123,7 +143,7 @@ export default function AlertsPage() {
             </div>
           </div>
 
-          <Button onClick={handleCreate} disabled={!name.trim()}>
+          <Button onClick={handleCreate} disabled={!name.trim() || stages.length === 0 || !userId.trim()}>
             Create Alert
           </Button>
         </CardBody>

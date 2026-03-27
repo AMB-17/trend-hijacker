@@ -59,7 +59,14 @@ export default function SettingsPage() {
           <h2 className="text-xl font-semibold text-foreground">User Context</h2>
         </CardHeader>
         <CardBody className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Input value={userId} onChange={e => setUserId(e.target.value)} placeholder="User ID" />
+          <Input
+            id="settings-user-id"
+            name="settings-user-id"
+            label="User ID"
+            value={userId}
+            onChange={e => setUserId(e.target.value)}
+            placeholder="User ID"
+          />
           <Button variant="outline" onClick={() => { refetchPreferences(); refetchSaved(); }}>
             Reload Data
           </Button>
@@ -110,6 +117,8 @@ export default function SettingsPage() {
               <div>
                 <p className="text-sm text-muted mb-2">Minimum Opportunity Score</p>
                 <Input
+                  id="settings-min-opportunity-score"
+                  name="settings-min-opportunity-score"
                   type="number"
                   value={preferences.minOpportunityScore}
                   onChange={e =>
@@ -122,8 +131,10 @@ export default function SettingsPage() {
               </div>
 
               <div>
-                <p className="text-sm text-muted mb-2">Digest Cadence</p>
+                <label htmlFor="settings-digest-cadence" className="text-sm text-muted mb-2 block">Digest Cadence</label>
                 <select
+                  id="settings-digest-cadence"
+                  name="settings-digest-cadence"
                   value={preferences.digestCadence}
                   onChange={e =>
                     setPreferences(prev => ({
