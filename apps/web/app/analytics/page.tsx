@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from 'react';
 import { useAlertMatches, useSavedTrends } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, Button, Badge, SkeletonGrid, Input } from '@/components/ui';

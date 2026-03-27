@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import { useTrends } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, Button, Badge, Input } from '@/components/ui';
