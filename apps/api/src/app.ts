@@ -20,6 +20,8 @@ import workspacesRoutes from "./routes/workspaces";
 import collectionsRoutes from "./routes/collections";
 import { trendAnalyticsRoutes } from "./routes/analytics";
 import authRoutes from "./routes/auth";
+import authEnterpriseRoutes from "./routes/auth-enterprise";
+import auditRoutes from "./routes/audit";
 import adminRoutes from "./routes/admin";
 import userDataRoutes from "./routes/user-data";
 
@@ -94,6 +96,9 @@ export async function buildApp() {
 
   // Auth routes (register first for security middleware)
   await app.register(authRoutes, { prefix: "/api/auth" });
+  
+  // Enterprise auth routes (OAuth, SAML, 2FA)
+  await app.register(authEnterpriseRoutes, { prefix: "/api/auth" });
 
   // API routes
   await app.register(trendsRoutes, { prefix: "/api/trends" });
@@ -111,6 +116,9 @@ export async function buildApp() {
 
   // Admin routes
   await app.register(adminRoutes, { prefix: "/api/admin" });
+  
+  // Audit/compliance routes
+  await app.register(auditRoutes, { prefix: "/api" });
 
   // User data routes (GDPR compliance)
   await app.register(userDataRoutes, { prefix: "/api/user" });

@@ -181,7 +181,7 @@ export const ReportHistoryPanel: React.FC = () => {
                   {new Date(report.createdAt).toLocaleDateString()} • {report.format.toUpperCase()}
                 </p>
               </div>
-              <Badge variant="outline">{report.format}</Badge>
+              <Badge variant="default">{report.format}</Badge>
             </div>
           ))}
         </div>

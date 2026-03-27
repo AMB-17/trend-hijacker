@@ -581,6 +581,257 @@ class AuthService {
     logger.info('Cleaned up expired sessions', { count: result.rowCount });
     return result.rowCount || 0;
   }
+
+  /**
+   * Validate OAuth token (placeholder - integrate with actual OAuth libs)
+   */
+  async validateOAuthToken(provider: string, token: string): Promise<boolean> {
+    // In production, validate against provider's API
+    // For now, basic validation
+    if (!provider || !token || token.length < 10) {
+      logger.warn('Invalid OAuth token', { provider });
+      return false;
+    }
+
+    logger.info('OAuth token validated', { provider });
+    return true;
+  }
+
+  /**
+   * Get OAuth account by provider and user
+   */
+  async getOAuthAccount(
+    userId: string,
+    provider: string
+  ): Promise<OAuthAccount | null> {
+    const result = await query<OAuthAccount>(
+      `
+      SELECT 
+        id, user_id as "userId", provider, provider_user_id as "providerUserId",
+        provider_email as "providerEmail", provider_name as "providerName",
+        access_token as "accessToken", refresh_token as "refreshToken",
+        token_expires_at as "tokenExpiresAt", created_at as "createdAt", updated_at as "updatedAt"
+      FROM oauth_accounts
+      WHERE user_id = $1 AND provider = $2
+      `,
+      [userId, provider]
+    );
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Unlink OAuth account
+   */
+  async unlinkOAuthAccount(userId: string, provider: string): Promise<void> {
+    await query(
+      'DELETE FROM oauth_accounts WHERE user_id = $1 AND provider = $2',
+      [userId, provider]
+    );
+
+    logger.info('OAuth account unlinked', { userId, provider });
+  }
+
+  /**
+   * List user OAuth accounts
+   */
+  async getOAuthAccounts(userId: string): Promise<OAuthAccount[]> {
+    const result = await query<OAuthAccount>(
+      `
+      SELECT 
+        id, user_id as "userId", provider, provider_user_id as "providerUserId",
+        provider_email as "providerEmail", provider_name as "providerName",
+        access_token as "accessToken", refresh_token as "refreshToken",
+        token_expires_at as "tokenExpiresAt", created_at as "createdAt", updated_at as "updatedAt"
+      FROM oauth_accounts
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    return result.rows;
+  }
+
+  /**
+   * Generate backup codes for user
+   */
+  async generateBackupCodes(count: number = 10): Promise<string[]> {
+    const codes = Array.from({ length: count }, () =>
+      cryptoRandomString({ length: 8, type: 'numeric' })
+    );
+
+    return codes;
+  }
+
+  /**
+   * Update backup codes for 2FA
+   */
+  async updateBackupCodes(userId: string): Promise<string[]> {
+    const backupCodes = await this.generateBackupCodes(10);
+    const hashedBackupCodes = await Promise.all(
+      backupCodes.map(code => this.hashPassword(code))
+    );
+
+    await query(
+      'UPDATE user_2fa SET backup_codes = $1 WHERE user_id = $2',
+      [hashedBackupCodes, userId]
+    );
+
+    logger.info('Backup codes updated', { userId });
+    return backupCodes;
+  }
+
+  /**
+   * Check if user has 2FA enabled
+   */
+  async has2FAEnabled(userId: string): Promise<boolean> {
+    const result = await query(
+      'SELECT enabled FROM user_2fa WHERE user_id = $1',
+      [userId]
+    );
+
+    return result.rows[0]?.enabled === true;
+  }
+
+  /**
+   * Get 2FA setup for user
+   */
+  async get2FASetup(userId: string): Promise<User2FA | null> {
+    const result = await query<User2FA>(
+      `
+      SELECT 
+        id, user_id as "userId", secret_key as "secretKey",
+        backup_codes as "backupCodes", enabled, enabled_at as "enabledAt",
+        created_at as "createdAt", updated_at as "updatedAt"
+      FROM user_2fa
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    return result.rows[0] || null;
+  }
+
+  /**
+   * Log authentication event for audit trail
+   */
+  async logAuthEvent(
+    eventType: string,
+    status: string,
+    userId?: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<void> {
+    try {
+      const timestamp = new Date().toISOString();
+
+      logger.info('Auth event logged', {
+        eventType,
+        status,
+        userId,
+        ipAddress: ipAddress?.substring(0, 15),
+        timestamp,
+      });
+
+      // Audit log would be written to database
+      // This is handled by audit.service
+    } catch (error) {
+      logger.error('Failed to log auth event', { error });
+    }
+  }
+
+  /**
+   * Validate session token and IP address
+   */
+  async validateSessionContext(
+    sessionId: string,
+    ipAddress: string
+  ): Promise<boolean> {
+    const result = await query(
+      `
+      SELECT ip_address FROM user_sessions
+      WHERE id = $1 AND expires_at > NOW()
+      `,
+      [sessionId]
+    );
+
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    const sessionIP = result.rows[0].ip_address;
+
+    // If session has IP, verify it matches (optional strict mode)
+    if (sessionIP && sessionIP !== ipAddress) {
+      logger.warn('Session IP mismatch - potential hijacking', {
+        sessionId,
+        expected: sessionIP?.substring(0, 10),
+        actual: ipAddress?.substring(0, 10),
+      });
+      // Don't fail - might be VPN/proxy, but log it
+    }
+
+    return true;
+  }
+
+  /**
+   * Rate limit check for auth attempts
+   */
+  async checkAuthRateLimit(ipAddress: string, maxAttempts: number = 5): Promise<boolean> {
+    const result = await query<{ count: number }>(
+      `
+      SELECT COUNT(*) as count FROM user_sessions
+      WHERE ip_address = $1 AND created_at > NOW() - INTERVAL '1 minute'
+      `,
+      [ipAddress]
+    );
+
+    const attempts = parseInt(result.rows[0]?.count || '0', 10);
+
+    if (attempts >= maxAttempts) {
+      logger.warn('Rate limit exceeded for IP', { ipAddress, attempts });
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Get user session statistics
+   */
+  async getSessionStatistics(userId: string): Promise<{
+    activeCount: number;
+    totalCount: number;
+    oldestSession: Date | null;
+    newestSession: Date | null;
+  }> {
+    const result = await query<{
+      active_count: number;
+      total_count: number;
+      oldest: Date | null;
+      newest: Date | null;
+    }>(
+      `
+      SELECT 
+        COUNT(CASE WHEN expires_at > NOW() THEN 1 END) as active_count,
+        COUNT(*) as total_count,
+        MIN(created_at) as oldest,
+        MAX(created_at) as newest
+      FROM user_sessions
+      WHERE user_id = $1
+      `,
+      [userId]
+    );
+
+    const row = result.rows[0];
+    return {
+      activeCount: parseInt(row?.active_count || '0', 10),
+      totalCount: parseInt(row?.total_count || '0', 10),
+      oldestSession: row?.oldest || null,
+      newestSession: row?.newest || null,
+    };
+  }
 }
 
 export const authService = new AuthService();

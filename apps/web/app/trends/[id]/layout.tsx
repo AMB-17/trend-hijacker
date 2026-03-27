@@ -5,13 +5,17 @@ import Link from 'next/link';
 import { Button } from '@/components/ui';
 import { ArrowLeft } from 'lucide-react';
 
-export default function TrendDetailLayout({
+interface TrendDetailLayoutProps {
+  children: React.ReactNode;
+  params: Promise<{ id: string }>;
+}
+
+export default async function TrendDetailLayout({
   children,
   params,
-}: {
-  children: React.ReactNode;
-  params: { id: string };
-}) {
+}: TrendDetailLayoutProps) {
+  const { id } = await params;
+  
   return (
     <div className="space-y-6 pb-8">
       {/* Navigation */}

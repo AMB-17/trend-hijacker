@@ -287,6 +287,317 @@ class AuditService {
   private toCamelCase(str: string): string {
     return str.replace(/_(.)/g, (_, c) => c.toUpperCase());
   }
+
+  /**
+   * Log security event
+   */
+  async logSecurityEvent(
+    userId: string | undefined,
+    eventType: string,
+    severity: 'low' | 'medium' | 'high' | 'critical',
+    description: string,
+    metadata?: Record<string, any>
+  ): Promise<void> {
+    try {
+      await this.logAction(
+        userId || null,
+        eventType,
+        'security_event',
+        undefined,
+        null,
+        metadata || null,
+        {},
+        'success'
+      );
+
+      logger.warn('Security event logged', { eventType, severity, userId });
+    } catch (error) {
+      logger.error('Failed to log security event', { eventType, error });
+    }
+  }
+
+  /**
+   * Query audit logs with advanced filtering
+   */
+  async queryAuditLogs(
+    filters: {
+      userId?: string;
+      action?: string;
+      resourceType?: string;
+      startDate?: Date;
+      endDate?: Date;
+      status?: string;
+      limit?: number;
+      offset?: number;
+    }
+  ): Promise<{ logs: AuditLogEntry[]; total: number }> {
+    return this.queryLogs(filters);
+  }
+
+  /**
+   * Export audit logs in multiple formats
+   */
+  async exportAuditLogs(
+    filters: Record<string, any>,
+    format: 'json' | 'csv' | 'jsonl' = 'json'
+  ): Promise<string> {
+    try {
+      const { logs } = await this.queryLogs({ ...filters, limit: 100000 });
+
+      if (format === 'json') {
+        return JSON.stringify(logs, null, 2);
+      } else if (format === 'csv') {
+        return this.logsToCSV(logs);
+      } else if (format === 'jsonl') {
+        return logs.map(log => JSON.stringify(log)).join('\n');
+      }
+
+      throw new Error(`Unsupported export format: ${format}`);
+    } catch (error) {
+      logger.error('Failed to export audit logs', { format, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Generate compliance report
+   */
+  async generateComplianceReport(
+    framework: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<{
+    framework: string;
+    periodStart: Date;
+    periodEnd: Date;
+    totalAuditLogs: number;
+    securityEvents: number;
+    failedAuthAttempts: number;
+    unauthorizedAccesses: number;
+    complianceScore: number;
+  }> {
+    try {
+      const stats = await query<{
+        total_logs: number;
+        security_events: number;
+        failed_auths: number;
+        unauthorized: number;
+      }>(
+        `
+        SELECT
+          COUNT(*) as total_logs,
+          COUNT(CASE WHEN action LIKE '%security%' THEN 1 END) as security_events,
+          COUNT(CASE WHEN action = 'failed_auth_attempt' THEN 1 END) as failed_auths,
+          COUNT(CASE WHEN action LIKE '%unauthorized%' OR status = 'failed' THEN 1 END) as unauthorized
+        FROM audit_logs
+        WHERE timestamp >= $1 AND timestamp <= $2
+        `,
+        [startDate, endDate]
+      );
+
+      const row = stats.rows[0] || {};
+      const totalLogs = parseInt(row.total_logs || '0', 10);
+      const securityEvents = parseInt(row.security_events || '0', 10);
+      const failedAuths = parseInt(row.failed_auths || '0', 10);
+      const unauthorized = parseInt(row.unauthorized || '0', 10);
+
+      // Simple compliance score: lower violations = higher score
+      const violations = securityEvents + failedAuths + unauthorized;
+      const complianceScore = Math.max(0, Math.min(100, 100 - (violations / (totalLogs || 1)) * 100));
+
+      return {
+        framework,
+        periodStart: startDate,
+        periodEnd: endDate,
+        totalAuditLogs: totalLogs,
+        securityEvents,
+        failedAuthAttempts: failedAuths,
+        unauthorizedAccesses: unauthorized,
+        complianceScore,
+      };
+    } catch (error) {
+      logger.error('Failed to generate compliance report', { framework, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get sensitive actions audit trail
+   */
+  async getSensitiveActionsAudit(
+    filters: {
+      startDate?: Date;
+      endDate?: Date;
+      userId?: string;
+      limit?: number;
+    }
+  ): Promise<AuditLogEntry[]> {
+    try {
+      const sensitiveSActions = [
+        'user_deleted',
+        'password_changed',
+        'permission_granted',
+        'permission_revoked',
+        'data_exported',
+        'data_deleted',
+        'system_config_changed',
+      ];
+
+      const whereConditions = [
+        `action IN (${sensitiveSActions.map(a => `'${a}'`).join(',')})`,
+      ];
+      const params: any[] = [];
+
+      if (filters.startDate) {
+        whereConditions.push(`timestamp >= $${params.length + 1}`);
+        params.push(filters.startDate);
+      }
+
+      if (filters.endDate) {
+        whereConditions.push(`timestamp <= $${params.length + 1}`);
+        params.push(filters.endDate);
+      }
+
+      if (filters.userId) {
+        whereConditions.push(`user_id = $${params.length + 1}`);
+        params.push(filters.userId);
+      }
+
+      const limit = Math.min(filters.limit || 500, 1000);
+      whereConditions.push(`LIMIT ${limit}`);
+
+      const result = await query(
+        `SELECT * FROM audit_logs WHERE ${whereConditions.join(' AND ')} ORDER BY timestamp DESC`,
+        params
+      );
+
+      return result.rows.map(row => this.mapAuditLogRow(row));
+    } catch (error) {
+      logger.error('Failed to get sensitive actions audit', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get user data export for GDPR compliance
+   */
+  async getUserDataExport(userId: string): Promise<{
+    user: Record<string, any>;
+    auditLog: AuditLogEntry[];
+    sessions: Record<string, any>[];
+  }> {
+    try {
+      // Get user data
+      const userResult = await query(
+        'SELECT id, email, name, tier, created_at, updated_at FROM users WHERE id = $1',
+        [userId]
+      );
+      const user = userResult.rows[0];
+
+      // Get audit logs
+      const { logs } = await this.queryLogs({ userId, limit: 10000 });
+
+      // Get sessions
+      const sessionsResult = await query(
+        'SELECT id, ip_address, user_agent, device_name, created_at, expires_at FROM user_sessions WHERE user_id = $1',
+        [userId]
+      );
+
+      return {
+        user,
+        auditLog: logs,
+        sessions: sessionsResult.rows,
+      };
+    } catch (error) {
+      logger.error('Failed to export user data', { userId, error });
+      throw error;
+    }
+  }
+
+  /**
+   * Log data deletion request (GDPR Right to be Forgotten)
+   */
+  async logDeletionRequest(userId: string, reason?: string): Promise<void> {
+    try {
+      await this.logAction(
+        userId,
+        'user_deletion_requested',
+        'user',
+        userId,
+        null,
+        { reason },
+        {},
+        'success'
+      );
+
+      logger.info('User deletion request logged', { userId });
+    } catch (error) {
+      logger.error('Failed to log deletion request', { userId, error });
+    }
+  }
+
+  /**
+   * Get audit log counts by action type
+   */
+  async getActionCounts(
+    startDate: Date,
+    endDate: Date
+  ): Promise<{ [action: string]: number }> {
+    try {
+      const result = await query(
+        `
+        SELECT action, COUNT(*) as count
+        FROM audit_logs
+        WHERE timestamp >= $1 AND timestamp <= $2
+        GROUP BY action
+        ORDER BY count DESC
+        `,
+        [startDate, endDate]
+      );
+
+      const counts: { [action: string]: number } = {};
+      result.rows.forEach((row: any) => {
+        counts[row.action] = parseInt(row.count, 10);
+      });
+
+      return counts;
+    } catch (error) {
+      logger.error('Failed to get action counts', { error });
+      throw error;
+    }
+  }
+
+  /**
+   * Get failed login attempts by IP
+   */
+  async getFailedLoginsByIP(
+    limit: number = 100
+  ): Promise<{ [ip: string]: number }> {
+    try {
+      const result = await query(
+        `
+        SELECT ip_address, COUNT(*) as attempts
+        FROM audit_logs
+        WHERE action = 'failed_auth_attempt'
+          AND timestamp > NOW() - INTERVAL '24 hours'
+        GROUP BY ip_address
+        ORDER BY attempts DESC
+        LIMIT $1
+        `,
+        [limit]
+      );
+
+      const byIP: { [ip: string]: number } = {};
+      result.rows.forEach((row: any) => {
+        byIP[row.ip_address || 'unknown'] = parseInt(row.attempts, 10);
+      });
+
+      return byIP;
+    } catch (error) {
+      logger.error('Failed to get failed logins by IP', { error });
+      throw error;
+    }
+  }
 }
 
 export const auditService = new AuditService();

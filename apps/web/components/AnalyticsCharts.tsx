@@ -120,7 +120,7 @@ export const TrendComparisonChart: React.FC<{ data: TrendComparisonData }> = ({ 
                 <span className="text-gray-600">Volume</span>
                 <span className="font-bold">{trend.discussionVolume}</span>
               </div>
-              <Badge variant="outline" className="mt-2">
+              <Badge variant="default" className="mt-2">
                 {trend.stage}
               </Badge>
             </div>
@@ -212,7 +212,7 @@ export const SentimentAnalysisChart: React.FC<{ data: SentimentData }> = ({ data
                   <Cell key={`cell-${index}`} fill={colors[index]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `${value.toFixed(1)}%`} />
+              <Tooltip formatter={(value: any) => `${typeof value === 'number' ? value.toFixed(1) : value}%`} />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -342,7 +342,7 @@ export const AIInsightsWidget: React.FC<{ trendId: string }> = ({ trendId }) => 
             </div>
           </div>
           <div className="mt-4 p-3 bg-gray-50 rounded">
-            <Badge variant={insights.riskAssessment.goNoGo === 'GO' ? 'success' : insights.riskAssessment.goNoGo === 'NO-GO' ? 'destructive' : 'warning'}>
+            <Badge variant={insights.riskAssessment.goNoGo === 'GO' ? 'success' : insights.riskAssessment.goNoGo === 'NO-GO' ? 'danger' : 'warning'}>
               {insights.riskAssessment.goNoGo}
             </Badge>
           </div>
@@ -355,7 +355,7 @@ export const AIInsightsWidget: React.FC<{ trendId: string }> = ({ trendId }) => 
           <h4 className="font-semibold mb-2">Industry Impact</h4>
           <div className="flex flex-wrap gap-2 mb-3">
             {insights.industryImpact.industries?.map((industry: string) => (
-              <Badge key={industry} variant="outline">{industry}</Badge>
+              <Badge key={industry} variant="default">{industry}</Badge>
             ))}
           </div>
           <p className="text-sm">
@@ -373,7 +373,7 @@ export const AIInsightsWidget: React.FC<{ trendId: string }> = ({ trendId }) => 
           <h4 className="font-semibold mb-2">Tags</h4>
           <div className="flex flex-wrap gap-2">
             {insights.tags.map((tag: any) => (
-              <Badge key={tag.tag} variant="secondary">
+              <Badge key={tag.tag} variant="primary">
                 {tag.tag}
               </Badge>
             ))}

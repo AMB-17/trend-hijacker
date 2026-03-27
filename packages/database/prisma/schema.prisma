@@ -43,6 +43,13 @@ model User {
   generatedReports GeneratedReport[]
   scheduledReports ScheduledReport[]
 
+  // Enterprise Security
+  userSessions     UserSession[]
+  oauthAccounts    OAuthAccount[]
+  user2FA          User2FA?
+  samlMappings     SAMLUserMapping[]
+  deletionRequests AccountDeletionRequest[]
+
   @@index([email])
 }
 
@@ -830,6 +837,9 @@ model GeneratedReport {
   templateId       String?
   template         ReportTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   
+  scheduledReportId String?
+  scheduledReport  ScheduledReport? @relation(fields: [scheduledReportId], references: [id], onDelete: SetNull)
+  
   // Report metadata
   title            String
   format           String   @default("pdf") // "pdf", "csv", "html"
@@ -852,8 +862,6 @@ model GeneratedReport {
   // Metadata
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
-  
-  scheduledReport  ScheduledReport?
   
   @@index([userId])
   @@index([format])
@@ -974,3 +982,215 @@ model TrendCohortInterest {
 // - competitiveLandscape: CompetitiveLandscape?
 // - cachedInsight: CachedInsight?
 // - cohortInterests: TrendCohortInterest[]
+
+// ============================================================================
+// ENTERPRISE SECURITY MODELS
+// ============================================================================
+
+// Session Management
+model UserSession {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tokenHash     String   @unique // SHA256 hash of session token
+  ipAddress     String?
+  userAgent     String?
+  deviceName    String?
+  
+  createdAt     DateTime @default(now())
+  expiresAt     DateTime
+  lastActivityAt DateTime @default(now()) @updatedAt
+  
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// OAuth Account Linking
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  provider          String   // 'google', 'github', 'azure', 'microsoft'
+  providerUserId    String   @unique
+  providerEmail     String?
+  providerName      String?
+  
+  accessToken       String?  @db.Text
+  refreshToken      String?  @db.Text
+  tokenExpiresAt    DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+// Two-Factor Authentication (TOTP)
+model User2FA {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  secretKey         String   // Base32 encoded TOTP secret
+  backupCodes       String[] // Hashed backup codes
+  
+  enabled           Boolean  @default(false)
+  enabledAt         DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+}
+
+// Audit Logging (Immutable Append-Only)
+model AuditLog {
+  id                String   @id @default(cuid())
+  
+  userId            String?
+  action            String   // 'user_login', 'data_modified', etc.
+  actionCategory    String?
+  
+  resourceType      String?  // 'user', 'workspace', 'trend', etc.
+  resourceId        String?
+  
+  beforeValue       Json?    // Previous state
+  afterValue        Json?    // New state
+  
+  status            String   @default("success") // 'success', 'failed'
+  severity          String   @default("info")     // 'low', 'medium', 'high', 'critical'
+  
+  ipAddress         String?
+  userAgent         String?
+  location          String?
+  
+  errorMessage      String?
+  additionalContext Json?
+  
+  timestamp         DateTime @default(now())
+  createdAt         DateTime @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType])
+  @@index([status])
+  @@index([timestamp])
+  @@index([severity])
+}
+
+// SAML Provider Configuration
+model SAMLProvider {
+  id                String   @id @default(cuid())
+  
+  issuer            String   @unique
+  certificate       String   @db.Text
+  metadataUrl       String?
+  ssoUrl            String?
+  sloUrl            String?
+  
+  enabled           Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([issuer])
+}
+
+// SAML User Mapping
+model SAMLUserMapping {
+  id                String   @id @default(cuid())
+  
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  samlProviderId    String
+  samlNameId        String
+  
+  createdAt         DateTime @default(now())
+  
+  @@unique([userId, samlProviderId])
+  @@index([userId])
+}
+
+// Data Retention Policies
+model RetentionPolicy {
+  id                String   @id @default(cuid())
+  
+  name              String
+  description       String?
+  resourceType      String   // 'audit_log', 'session', etc.
+  
+  retentionDays     Int      // How long to keep data
+  archiveAfterDays  Int?     // When to archive to cold storage
+  deleteAfterDays   Int?     // When to permanently delete
+  
+  enabled           Boolean  @default(true)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Compliance Configuration
+model ComplianceConfig {
+  id                String   @id @default(cuid())
+  
+  framework         String   // 'gdpr', 'hipaa', 'soc2', etc.
+  enabled           Boolean  @default(true)
+  
+  requiresMFA       Boolean  @default(true)
+  requiresAuditLog  Boolean  @default(true)
+  requiresEncryption Boolean @default(true)
+  
+  settings          Json     // Framework-specific settings
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@unique([framework])
+}
+
+// Security Events
+model SecurityEvent {
+  id                String   @id @default(cuid())
+  
+  userId            String?
+  eventType         String
+  severity          String   // 'low', 'medium', 'high', 'critical'
+  description       String   @db.Text
+  
+  ipAddress         String?
+  userAgent         String?
+  
+  resolved          Boolean  @default(false)
+  resolvedBy        String?
+  resolution        String?
+  
+  timestamp         DateTime @default(now())
+  createdAt         DateTime @default(now())
+  
+  @@index([userId])
+  @@index([severity])
+  @@index([resolved])
+}
+
+// Account Deletion Requests (GDPR Right to be Forgotten)
+model AccountDeletionRequest {
+  id                String   @id @default(cuid())
+  
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  requestedAt       DateTime @default(now())
+  confirmedAt       DateTime?
+  deletedAt         DateTime?
+  
+  status            String   @default("pending") // 'pending', 'confirmed', 'completed', 'cancelled'
+  reason            String?
+  notes             String?
+  
+  @@index([userId])
+  @@index([status])
+}
