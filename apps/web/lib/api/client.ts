@@ -145,6 +145,7 @@ class ApiClient {
       endpoint.startsWith('/api/signals/early') ||
       endpoint.startsWith('/api/signals/exploding') ||
       endpoint.startsWith('/api/opportunities') ||
+      endpoint.startsWith('/api/alerts') ||
       endpoint === '/api/trends' ||
       endpoint.startsWith('/api/trends?') ||
       endpoint.startsWith('/api/trends/')
@@ -183,6 +184,14 @@ class ApiClient {
     }
 
     if (endpoint.startsWith('/api/opportunities/quick-wins')) {
+      return { success: true, data: [] };
+    }
+
+    if (endpoint.startsWith('/api/alerts/evaluate')) {
+      return { success: true, data: [] };
+    }
+
+    if (endpoint.startsWith('/api/alerts')) {
       return { success: true, data: [] };
     }
 

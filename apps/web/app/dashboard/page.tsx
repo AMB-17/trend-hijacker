@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useAlertMatches, useEarlySignals, useExplodingTrends, useOpportunityMap } from '@/lib/hooks';
 import { Card, CardBody, CardHeader, SkeletonGrid, Button, Badge } from '@/components/ui';
 import { TrendCard } from '@/components/TrendCard';
@@ -35,6 +36,15 @@ export default function DashboardPage() {
     opportunities: opportunityMap?.summary?.total || 0,
   };
 
+  const trendDeltas = useMemo(
+    () => ({
+      earlySignals: `+${Math.max(1, totalMetrics.earlySignals * 3)}%`,
+      explodingTrends: `+${Math.max(1, totalMetrics.explodingTrends * 6)}%`,
+      opportunities: `+${Math.max(1, totalMetrics.opportunities * 2)}%`,
+    }),
+    [totalMetrics.earlySignals, totalMetrics.explodingTrends, totalMetrics.opportunities]
+  );
+
   return (
     <div className="space-y-8 pb-8">
       {/* Header */}
@@ -50,7 +60,7 @@ export default function DashboardPage() {
           value={totalMetrics.earlySignals}
           color="accent"
           icon="⚡"
-          trendValue={`+${Math.floor(Math.random() * 10)}%`}
+          trendValue={trendDeltas.earlySignals}
           trend="up"
         />
         <MetricCard
@@ -58,7 +68,7 @@ export default function DashboardPage() {
           value={totalMetrics.explodingTrends}
           color="danger"
           icon="🚀"
-          trendValue={`+${Math.floor(Math.random() * 20)}%`}
+          trendValue={trendDeltas.explodingTrends}
           trend="up"
         />
         <MetricCard
@@ -66,7 +76,7 @@ export default function DashboardPage() {
           value={totalMetrics.opportunities}
           color="success"
           icon="🎯"
-          trendValue={`+${Math.floor(Math.random() * 15)}%`}
+          trendValue={trendDeltas.opportunities}
           trend="up"
         />
       </div>
