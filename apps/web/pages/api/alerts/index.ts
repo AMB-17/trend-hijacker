@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { createAlert, listAlerts } from '../../../lib/server/demo-store'
+import { createAlert, listAlerts } from '@/lib/server/demo-store'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const userIdParam = Array.isArray(req.query.userId) ? req.query.userId[0] : req.query.userId

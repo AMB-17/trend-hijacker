@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { listSavedTrends, saveTrend } from '../../../lib/server/demo-store'
+import { listSavedTrends, saveTrend } from '@/lib/server/demo-store'
 
 function parseNumber(value: unknown, fallback: number, min: number, max: number): number {
   const raw = Array.isArray(value) ? value[0] : value
