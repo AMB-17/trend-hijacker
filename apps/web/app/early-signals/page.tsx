@@ -99,6 +99,25 @@ export default function EarlySignalsPage() {
             </div>
           </CardBody>
         </Card>
+
+      {/* Filters */}
+      <Card>
+        <CardBody className="space-y-4">
+          {/* Search */}
+          <div>
+            <Input
+              placeholder="Search early signals..."
+              icon={<Search className="w-4 h-4" />}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Sort */}
+          <div>
+            <p className="text-sm text-muted mb-2 font-medium">Sort By</p>
+            <div className="flex gap-2 flex-wrap">
+              {['score', 'date', 'velocity', 'volume'].map((sort) => (
                 <Button
                   key={sort}
                   onClick={() => handleSortChange(sort)}
