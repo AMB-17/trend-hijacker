@@ -9,12 +9,11 @@ interface SelectedTrend {
   id: string;
   title: string;
   opportunityScore: number;
-  velocityScore: number;
+  growthRate: number;
   problemIntensity: number;
-  discussionCount: number;
+  discussionVolume: number;
   status: string;
   noveltyScore: number;
-  category?: string;
   stage?: string;
 }
 
@@ -45,12 +44,11 @@ export default function ComparePage() {
           id: trend.id,
           title: trend.title,
           opportunityScore: trend.opportunityScore || 0,
-          velocityScore: trend.velocityScore || 0,
+          growthRate: trend.growthRate || 0,
           problemIntensity: trend.problemIntensity || 0,
-          discussionCount: trend.discussionCount || 0,
+          discussionVolume: trend.discussionVolume || 0,
           status: trend.status || 'unknown',
           noveltyScore: trend.noveltyScore || 0,
-          category: trend.category,
           stage: trend.stage,
         },
       ]);
@@ -205,7 +203,7 @@ export default function ComparePage() {
                               {trend.title}
                             </h3>
                           </Link>
-                          <p className="text-xs text-muted mt-1">{trend.category || 'General'}</p>
+                          <p className="text-xs text-muted mt-1">{trend.stage || 'General'}</p>
                         </div>
                         <button
                           onClick={() =>
@@ -218,7 +216,7 @@ export default function ComparePage() {
                       </div>
                       <div className="flex gap-2">
                         <Badge variant="primary">{trend.status}</Badge>
-                        {trend.stage && <Badge variant="outline">{trend.stage}</Badge>}
+                        {trend.stage && <Badge variant="accent">{trend.stage}</Badge>}
                       </div>
                     </CardBody>
                   </Card>
@@ -237,8 +235,8 @@ export default function ComparePage() {
                   <div className="border-t border-gray-800" />
 
                   <ComparisonMetric
-                    label="Velocity Score"
-                    values={selectedTrends.map((t) => t.velocityScore)}
+                    label="Growth Rate"
+                    values={selectedTrends.map((t) => t.growthRate)}
                     icon={<TrendingUp className="w-5 h-5 text-success" />}
                   />
 
@@ -271,7 +269,7 @@ export default function ComparePage() {
                         <div key={idx} className="flex justify-between text-sm">
                           <span className="text-muted">Trend {idx + 1}</span>
                           <span className="font-mono font-semibold text-foreground">
-                            {t.discussionCount.toLocaleString()} posts
+                            {t.discussionVolume.toLocaleString()} posts
                           </span>
                         </div>
                       ))}
@@ -291,7 +289,7 @@ export default function ComparePage() {
                       prev.opportunityScore > current.opportunityScore ? prev : current
                     );
                     const fastest = selectedTrends.reduce((prev, current) =>
-                      prev.velocityScore > current.velocityScore ? prev : current
+                      prev.growthRate > current.growthRate ? prev : current
                     );
                     const mostProblems = selectedTrends.reduce((prev, current) =>
                       prev.problemIntensity > current.problemIntensity ? prev : current

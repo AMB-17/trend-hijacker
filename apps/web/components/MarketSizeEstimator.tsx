@@ -26,8 +26,8 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
   // Calculate market size based on trend metrics
   const estimates = useMemo((): MarketSizeEstimate => {
     const {
-      discussionCount = 1000,
-      velocityScore = 1.5,
+      discussionVolume = 1000,
+      growthRate = 1.5,
       opportunityScore = 50,
       problemIntensity = 0.7,
     } = trend;
@@ -35,7 +35,7 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
     // Base market sizing formula
     // TAM = All people who could benefit from the solution
     const baseTAM =
-      discussionCount * 50 * problemIntensity * (opportunityScore / 100) * assumptions.marketMultiplier;
+      discussionVolume * 50 * problemIntensity * (opportunityScore / 100) * assumptions.marketMultiplier;
 
     // SAM = Realistic subset that can be reached
     const sam = baseTAM * 0.3; // 30% of TAM is realistic market
@@ -76,10 +76,6 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
     0,
     2 - (trend.problemIntensity || 0.5) - (trend.opportunityScore || 50) / 100
   );
-  const riskColor =
-    riskLevel < 0.5 ? 'bg-green-100 text-green-800' : 
-    riskLevel < 1.0 ? 'bg-yellow-100 text-yellow-800' : 
-    'bg-red-100 text-red-800';
 
   return (
     <div className="space-y-4">
@@ -224,7 +220,7 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
                       (trend.stage === 'emerging' && idx === 1) ||
                       (trend.stage === 'mature' && idx === 2)
                         ? 'primary'
-                        : 'outline'
+                        : 'default'
                     }
                   >
                     {stage}
@@ -250,7 +246,7 @@ export function MarketSizeEstimator({ trend }: MarketEstimatorProps) {
 
             <div>
               <p className="text-sm text-muted mb-2">Risk Level</p>
-              <Badge variant={riskColor}>
+              <Badge variant={riskLevel < 0.5 ? 'success' : riskLevel < 1.0 ? 'warning' : 'danger'}>
                 {riskLevel < 0.5 ? 'Low' : riskLevel < 1.0 ? 'Medium' : 'High'} Risk
               </Badge>
             </div>

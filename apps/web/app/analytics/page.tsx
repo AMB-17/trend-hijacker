@@ -9,11 +9,10 @@ import { DEMO_USER_ID } from '@/lib/user-context';
 
 export default function AnalyticsPage() {
   const userId = DEMO_USER_ID;
-  const { data: savedTrends, loading, error, retry, refetch } = useSavedTrends?.(userId) || {
-    data: [],
+  const { trends: savedTrends, loading, error, refetch } = useSavedTrends(userId) || {
+    trends: [],
     loading: false,
     error: null,
-    retry: () => {},
     refetch: () => {},
   };
 
@@ -143,6 +142,11 @@ export default function AnalyticsPage() {
                             {trend.status}
                           </Badge>
                         )}
+                        {trend.stage && (
+                          <Badge variant="accent" className="text-xs">
+                            {trend.stage}
+                          </Badge>
+                        )}
                       </div>
                     </button>
                   ))
@@ -194,10 +198,7 @@ export default function AnalyticsPage() {
                     {selectedTrend.status && (
                       <Badge variant="primary">{selectedTrend.status}</Badge>
                     )}
-                    {selectedTrend.stage && <Badge variant="outline">{selectedTrend.stage}</Badge>}
-                    {selectedTrend.category && (
-                      <Badge variant="secondary">{selectedTrend.category}</Badge>
-                    )}
+                    {selectedTrend.stage && <Badge variant="accent">{selectedTrend.stage}</Badge>}
                   </div>
 
                   {/* Key Metrics */}
@@ -211,7 +212,7 @@ export default function AnalyticsPage() {
                     <div>
                       <p className="text-xs text-muted">Velocity</p>
                       <p className="text-lg font-bold text-success">
-                        {selectedTrend.velocityScore?.toFixed(2) || 'N/A'}x
+                        {selectedTrend.growthRate?.toFixed(2) || 'N/A'}x
                       </p>
                     </div>
                     <div>
@@ -223,7 +224,7 @@ export default function AnalyticsPage() {
                     <div>
                       <p className="text-xs text-muted">Discussions</p>
                       <p className="text-lg font-bold text-primary">
-                        {(selectedTrend.discussionCount || 0).toLocaleString()}
+                        {(selectedTrend.discussionVolume || 0).toLocaleString() || 'N/A'}
                       </p>
                     </div>
                   </div>
